@@ -12,27 +12,6 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 URLS = {
-    "Hepsiburada": [
-        "https://www.hepsiburada.com/bilgisayarlar-c-2147483646",
-        "https://www.hepsiburada.com/telefonlar-c-2147483642",
-        "https://www.hepsiburada.com/tv-ses-sistemleri-c-2147483638",
-        "https://www.hepsiburada.com/beyaz-esya-c-2147483637",
-        "https://www.hepsiburada.com/kucuk-ev-aletleri-c-2147483633",
-        "https://www.hepsiburada.com/giyim-ayakkabi-c-2147483636",
-        "https://www.hepsiburada.com/kozmetik-kisisel-bakim-c-2147483634",
-        "https://www.hepsiburada.com/anne-bebek-oyuncak-c-2147483639",
-        "https://www.hepsiburada.com/spor-outdoor-c-2147483645",
-        "https://www.hepsiburada.com/cep-telefonlari-c-371965",
-        "https://www.hepsiburada.com/laptop-notebook-dizustu-bilgisayarlar-c-98",
-        "https://www.hepsiburada.com/camasir-makineleri-c-155121",
-        "https://www.hepsiburada.com/bebek-bezleri-c-301138",
-        "https://www.hepsiburada.com/spor-ayakkabilar-c-384551",
-        "https://www.hepsiburada.com/kahve-makineleri-c-22017",
-        "https://www.hepsiburada.com/kedi-mamalari-c-21471110",
-        "https://www.hepsiburada.com/yuz-bakimi-c-32000008",
-        "https://www.hepsiburada.com/mutfak-gerecleri-c-22014",
-        "https://www.hepsiburada.com/oyuncu-bilgisayarlari-c-2147483646"
-    ],
     "Trendyol": [
         "https://www.trendyol.com/cep-telefonu-x-c103498",
         "https://www.trendyol.com/laptop-x-c103108",
@@ -40,24 +19,46 @@ URLS = {
         "https://www.trendyol.com/kadin-elbise-x-g1-c56",
         "https://www.trendyol.com/supermarket-x-c104033",
         "https://www.trendyol.com/parfum-x-c84",
-        "https://www.trendyol.com/kopek-mamasi-x-c104276",
+        "https://www.trendyol.com/outdoor-kamp-malzemeleri-x-c104217",
         "https://www.trendyol.com/televizyon-x-c104156",
         "https://www.trendyol.com/robot-supurge-x-c109403",
         "https://www.trendyol.com/oto-lastik-x-c105058"
     ],
-    "N11": [
-        "https://www.n11.com/spor-outdoor"
+    "Hepsiburada": [
+        "https://www.hepsiburada.com/cep-telefonlari-c-371965",
+        "https://www.hepsiburada.com/laptop-notebook-dizustu-bilgisayarlar-c-98",
+        "https://www.hepsiburada.com/camasir-makineleri-c-155121",
+        "https://www.hepsiburada.com/doga-sporlari-kampcilik-c-27013",
+        "https://www.hepsiburada.com/spor-ayakkabilar-c-384551",
+        "https://www.hepsiburada.com/kahve-makineleri-c-22017",
+        "https://www.hepsiburada.com/kamp-mutfagi-c-2147483606",
+        "https://www.hepsiburada.com/yuz-bakimi-c-32000008",
+        "https://www.hepsiburada.com/mutfak-gerecleri-c-22014",
+        "https://www.hepsiburada.com/oyuncu-bilgisayarlari-c-2147483646"
     ],
     "Amazon": [
-        "https://www.amazon.com.tr/b?node=13709907031", 
-        "https://www.amazon.com.tr/b?node=13709880031", 
-        "https://www.amazon.com.tr/b?node=13710034031", 
-        "https://www.amazon.com.tr/b?node=13710038031", 
-        "https://www.amazon.com.tr/b?node=13710899031", 
-        "https://www.amazon.com.tr/b?node=13710762031", 
-        "https://www.amazon.com.tr/b?node=13710041031", 
-        "https://www.amazon.com.tr/b?node=13711090031", 
-        "https://www.amazon.com.tr/b?node=13710871031"  
+        "https://www.amazon.com.tr/b?node=13709907031", # Bilgisayar
+        "https://www.amazon.com.tr/b?node=13709880031", # Elektronik
+        "https://www.amazon.com.tr/b?node=13710129031", # Mutfak
+        "https://www.amazon.com.tr/b?node=21636256031", # Kamp & Outdoor
+        "https://www.amazon.com.tr/b?node=13710777031", # Spor
+        "https://www.amazon.com.tr/b?node=21639343031", # Kitap
+        "https://www.amazon.com.tr/b?node=13710034031", # Ev
+        "https://www.amazon.com.tr/b?node=13709861031", # Güzellik
+        "https://www.amazon.com.tr/b?node=13709918031", # Ofis
+        "https://www.amazon.com.tr/b?node=13710787031"  # Yapı Market
+    ],
+    "N11": [
+        "https://www.n11.com/bilgisayar/dizustu-bilgisayar",
+        "https://www.n11.com/telefon-ve-aksesuarlari/cep-telefonu",
+        "https://www.n11.com/televizyon-ve-ses-sistemleri/televizyon",
+        "https://www.n11.com/beyaz-esya/buzdolabi",
+        "https://www.n11.com/elektrikli-ev-aletleri/supurge",
+        "https://www.n11.com/spor-giyim-ve-ayakkabi/spor-ayakkabi",
+        "https://www.n11.com/spor-outdoor/kamp-ve-doga-sporlari",
+        "https://www.n11.com/kozmetik-ve-kisisel-bakim/parfum",
+        "https://www.n11.com/spor-outdoor/kamp-mutfagi",
+        "https://www.n11.com/otomotiv-ve-motosiklet/lastik"
     ]
 }
 
