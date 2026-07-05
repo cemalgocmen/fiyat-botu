@@ -22,28 +22,30 @@ URLS = {
         "https://www.hepsiburada.com/kozmetik-kisisel-bakim-c-2147483634",
         "https://www.hepsiburada.com/anne-bebek-oyuncak-c-2147483639",
         "https://www.hepsiburada.com/spor-outdoor-c-2147483645",
-        "https://www.hepsiburada.com/yapi-market-bahce-c-2147483643"
+        "https://www.hepsiburada.com/cep-telefonlari-c-371965",
+        "https://www.hepsiburada.com/laptop-notebook-dizustu-bilgisayarlar-c-98",
+        "https://www.hepsiburada.com/camasir-makineleri-c-155121",
+        "https://www.hepsiburada.com/bebek-bezleri-c-301138",
+        "https://www.hepsiburada.com/spor-ayakkabilar-c-384551",
+        "https://www.hepsiburada.com/kahve-makineleri-c-22017",
+        "https://www.hepsiburada.com/kedi-mamalari-c-21471110",
+        "https://www.hepsiburada.com/yuz-bakimi-c-32000008",
+        "https://www.hepsiburada.com/mutfak-gerecleri-c-22014",
+        "https://www.hepsiburada.com/oyuncu-bilgisayarlari-c-2147483646"
     ],
     "Trendyol": [
-        "https://www.trendyol.com/elektronik-x-c104052",
-        "https://www.trendyol.com/kadin-x-c99",
-        "https://www.trendyol.com/erkek-x-c108",
-        "https://www.trendyol.com/cocuk-x-c118",
-        "https://www.trendyol.com/ev-yasam-x-c116",
-        "https://www.trendyol.com/supermarket-x-c104192",
-        "https://www.trendyol.com/kozmetik-x-c117",
-        "https://www.trendyol.com/ayakkabi-canta-x-c114",
-        "https://www.trendyol.com/saat-aksesuar-x-c34"
+        "https://www.trendyol.com/cep-telefonu-x-c103498",
+        "https://www.trendyol.com/laptop-x-c103108",
+        "https://www.trendyol.com/erkek-t-shirt-x-g2-c73",
+        "https://www.trendyol.com/kadin-elbise-x-g1-c56",
+        "https://www.trendyol.com/supermarket-x-c104033",
+        "https://www.trendyol.com/parfum-x-c84",
+        "https://www.trendyol.com/kopek-mamasi-x-c104276",
+        "https://www.trendyol.com/televizyon-x-c104156",
+        "https://www.trendyol.com/robot-supurge-x-c109403",
+        "https://www.trendyol.com/oto-lastik-x-c105058"
     ],
     "N11": [
-        "https://www.n11.com/bilgisayar",
-        "https://www.n11.com/telefon-ve-aksesuarlari",
-        "https://www.n11.com/televizyon-ve-ses-sistemleri",
-        "https://www.n11.com/beyaz-esya",
-        "https://www.n11.com/elektrikli-ev-aletleri",
-        "https://www.n11.com/giyim-ayakkabi",
-        "https://www.n11.com/kozmetik-kisisel-bakim",
-        "https://www.n11.com/anne-bebek-oyuncak",
         "https://www.n11.com/spor-outdoor"
     ],
     "Amazon": [
@@ -236,8 +238,22 @@ async def main():
                     pass
                 
         for site, links in URLS.items():
-            for url in links:
-                await crawl_site(page, url, site)
+            for base_url in links:
+                for page_num in range(1, 4): # İlk 3 sayfa
+                    if page_num == 1:
+                        page_url = base_url
+                    else:
+                        sep = "&" if "?" in base_url else "?"
+                        if site == "Trendyol":
+                            page_url = f"{base_url}{sep}pi={page_num}"
+                        elif site == "Hepsiburada":
+                            page_url = f"{base_url}{sep}sayfa={page_num}"
+                        elif site == "N11":
+                            page_url = f"{base_url}{sep}pg={page_num}"
+                        elif site == "Amazon":
+                            page_url = f"{base_url}{sep}page={page_num}"
+                            
+                    await crawl_site(page, page_url, site)
                 await asyncio.sleep(2) 
         
         print("\nTur tamamlandı, tarayıcı kapatılıyor.")
