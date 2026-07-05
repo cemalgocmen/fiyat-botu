@@ -222,16 +222,18 @@ async def main():
         page = await context.new_page()
         
         print(f"\n--- GITHUB ACTIONS TARAMA TURU BAŞLIYOR: {datetime.now().strftime('%H:%M:%S')} ---")
-        # Kanala uyandığını haber ver
-        if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
-            import requests
-            try:
-                requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={
-                    "chat_id": TELEGRAM_CHAT_ID,
-                    "text": "🤖 BİP BOP! Fiyat Botu uyandı ve taramaya başlıyor... Gözüm yüksek indirimlerde! 🕵️‍♂️"
-                })
-            except Exception as e:
-                pass
+        # Kanala sadece haftada 1 kez (Pazartesi 12:00 - 12:30 arası) hayatta olduğunu haber ver
+        now = datetime.now()
+        if now.weekday() == 0 and now.hour == 12 and now.minute < 30:
+            if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
+                import requests
+                try:
+                    requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={
+                        "chat_id": TELEGRAM_CHAT_ID,
+                        "text": "🤖 HAFTALIK KONTROL: Fiyat Botu sapasağlam hayatta ve arka planda çalışmaya devam ediyor! Gözüm yüksek indirimlerde! 🕵️‍♂️"
+                    })
+                except Exception as e:
+                    pass
                 
         for site, links in URLS.items():
             for url in links:
