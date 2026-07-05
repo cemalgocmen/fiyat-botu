@@ -222,6 +222,17 @@ async def main():
         page = await context.new_page()
         
         print(f"\n--- GITHUB ACTIONS TARAMA TURU BAŞLIYOR: {datetime.now().strftime('%H:%M:%S')} ---")
+        # Kanala uyandığını haber ver
+        if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
+            import requests
+            try:
+                requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={
+                    "chat_id": TELEGRAM_CHAT_ID,
+                    "text": "🤖 BİP BOP! Fiyat Botu uyandı ve taramaya başlıyor... Gözüm yüksek indirimlerde! 🕵️‍♂️"
+                })
+            except Exception as e:
+                pass
+                
         for site, links in URLS.items():
             for url in links:
                 await crawl_site(page, url, site)
