@@ -156,8 +156,7 @@ async def crawl_site(page, url, site):
                 except: continue
                 
         elif site == "Amazon":
-            cards = await page.query_selector_all('.s-result-item')
-            if not cards: cards = await page.query_selector_all('li.octopus-pc-item')
+            cards = await page.query_selector_all('.s-result-item[data-component-type="s-search-result"], li.octopus-pc-item, div[class*="apbSearchResultItem"]')
             
             for c in cards:
                 try:
