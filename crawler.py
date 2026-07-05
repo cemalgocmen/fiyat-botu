@@ -22,7 +22,8 @@ URLS = {
         "https://www.trendyol.com/outdoor-kamp-malzemeleri-x-c104217",
         "https://www.trendyol.com/televizyon-x-c104156",
         "https://www.trendyol.com/robot-supurge-x-c109403",
-        "https://www.trendyol.com/oto-lastik-x-c105058"
+        "https://www.trendyol.com/oto-lastik-x-c105058",
+        "https://www.trendyol.com/yapi-market-x-c104193"
     ],
     "Hepsiburada": [
         "https://www.hepsiburada.com/cep-telefonlari-c-371965",
@@ -34,7 +35,8 @@ URLS = {
         "https://www.hepsiburada.com/kamp-mutfagi-c-2147483606",
         "https://www.hepsiburada.com/yuz-bakimi-c-32000008",
         "https://www.hepsiburada.com/mutfak-gerecleri-c-22014",
-        "https://www.hepsiburada.com/oyuncu-bilgisayarlari-c-2147483646"
+        "https://www.hepsiburada.com/oyuncu-bilgisayarlari-c-2147483646",
+        "https://www.hepsiburada.com/yapi-market-bahce-c-2147483643"
     ],
     "Amazon": [
         "https://www.amazon.com.tr/b?node=13709907031", # Bilgisayar
@@ -46,7 +48,8 @@ URLS = {
         "https://www.amazon.com.tr/b?node=13710034031", # Ev
         "https://www.amazon.com.tr/b?node=13709861031", # Güzellik
         "https://www.amazon.com.tr/b?node=13709918031", # Ofis
-        "https://www.amazon.com.tr/b?node=13710787031"  # Yapı Market
+        "https://www.amazon.com.tr/b?node=13710787031",  # Yapı Market
+        "https://www.amazon.com.tr/b?node=13710787031"
     ],
     "N11": [
         "https://www.n11.com/bilgisayar/dizustu-bilgisayar",
@@ -58,7 +61,8 @@ URLS = {
         "https://www.n11.com/spor-outdoor/kamp-ve-doga-sporlari",
         "https://www.n11.com/kozmetik-ve-kisisel-bakim/parfum",
         "https://www.n11.com/spor-outdoor/kamp-mutfagi",
-        "https://www.n11.com/otomotiv-ve-motosiklet/lastik"
+        "https://www.n11.com/otomotiv-ve-motosiklet/lastik",
+        "https://www.n11.com/yapi-market-ve-hirdavat"
     ]
 }
 
