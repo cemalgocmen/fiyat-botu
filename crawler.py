@@ -8,7 +8,7 @@ import subprocess
 try:
     import playwright_stealth
 except ImportError:
-    subprocess.check_call(["pip", "install", "playwright-stealth"])
+    subprocess.check_call(["pip", "install", "playwright-stealth==1.0.6"])
 
 from playwright.async_api import async_playwright
 from datetime import datetime
