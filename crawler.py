@@ -157,12 +157,16 @@ async def crawl_site(page, url, site):
                 
         elif site == "Amazon":
             cards = await page.query_selector_all('.s-result-item')
+            if not cards: cards = await page.query_selector_all('li.octopus-pc-item')
+            
             for c in cards:
                 try:
-                    title_el = await c.query_selector('.a-text-normal')
+                    title_el = await c.query_selector('.a-text-normal, .octopus-pc-asin-title span')
                     title = await title_el.inner_text() if title_el else ""
-                    link_el = await c.query_selector('.a-link-normal.s-no-outline')
+                    
+                    link_el = await c.query_selector('.a-link-normal.s-no-outline, a.octopus-pc-item-link')
                     href = "https://www.amazon.com.tr" + await link_el.get_attribute('href') if link_el else ""
+                    
                     price_whole = await c.query_selector('.a-price-whole')
                     price_fraction = await c.query_selector('.a-price-fraction')
                     if price_whole:
@@ -171,6 +175,7 @@ async def crawl_site(page, url, site):
                         price = parse_price(f"{w}{f}")
                     else:
                         price = None
+                        
                     products.append((href.split('/dp/')[1].split('/')[0] if '/dp/' in href else href, title, href, price))
                 except: continue
 
