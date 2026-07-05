@@ -2,9 +2,18 @@ import sqlite3
 import time
 import asyncio
 import os
+import subprocess
+
+# Kurulumları dinamik olarak yapıyoruz ki GitHub Actions'da çalışsın
+try:
+    import playwright_stealth
+except ImportError:
+    subprocess.check_call(["pip", "install", "playwright-stealth"])
+
 from playwright.async_api import async_playwright
 from datetime import datetime
 import re
+from playwright_stealth import stealth_async
 
 DB_FILE = "products.db"
 # Github Actions Secrets'tan alınacak
@@ -230,6 +239,7 @@ async def main():
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
         page = await context.new_page()
+        await stealth_async(page)
         
         print(f"\n--- GITHUB ACTIONS TARAMA TURU BAŞLIYOR: {datetime.now().strftime('%H:%M:%S')} ---")
         # Kanala her sabah 09:00 - 09:30 arası hayatta olduğunu haber ver
