@@ -27,6 +27,16 @@ URLS = {
         "https://www.amazon.com.tr/b?node=13710034031", # Outdoor & Kamp
         "https://www.amazon.com.tr/b?node=12503610031", # Küçük Ev Aletleri
         "https://www.amazon.com.tr/b?node=12503614031", # Mutfak Aletleri
+        "https://www.amazon.com.tr/s?k=bilgisayar", # Bilgisayar
+        "https://www.amazon.com.tr/s?k=televizyon", # Televizyon
+        "https://www.amazon.com.tr/s?k=giyim", # Moda & Giyim
+        "https://www.amazon.com.tr/s?k=oyuncak", # Oyuncak
+        "https://www.amazon.com.tr/s?k=kitap", # Kitap
+        "https://www.amazon.com.tr/s?k=kozmetik", # Kozmetik
+        "https://www.amazon.com.tr/s?k=otomobil", # Otomotiv
+        "https://www.amazon.com.tr/s?k=evcil+hayvan", # Evcil Hayvan
+        "https://www.amazon.com.tr/s?k=spor+aletleri", # Spor
+        "https://www.amazon.com.tr/s?k=mobilya", # Mobilya
     ]
 }
 
