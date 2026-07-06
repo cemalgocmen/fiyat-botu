@@ -87,7 +87,7 @@ def process_product(product_id, title, url, site, current_price):
         old_price = result[0]
         if current_price < old_price:
             drop_percentage = ((old_price - current_price) / old_price) * 100
-            if drop_percentage >= 7.0:
+            if drop_percentage >= 5.0:
                 send_telegram_alert(title, url, old_price, current_price, drop_percentage, site)
         cursor.execute('''
             UPDATE products 
