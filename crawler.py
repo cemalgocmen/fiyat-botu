@@ -62,8 +62,20 @@ def init_db():
             url TEXT,
             site TEXT,
             current_price REAL,
-            last_checked TIMESTAMP,
-            lowest_price REAL
+            lowest_price REAL,
+            last_checked TIMESTAMP
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS custom_keywords (
+            keyword TEXT PRIMARY KEY,
+            threshold REAL DEFAULT 15.0
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS bot_state (
+            key TEXT PRIMARY KEY,
+            value TEXT
         )
     ''')
     conn.commit()
@@ -78,6 +90,73 @@ def send_telegram_alert(title, url, old_price, new_price, drop_percentage, site)
             requests.post(api_url, json={"chat_id": TELEGRAM_CHAT_ID, "text": msg})
         except Exception as e:
             print(f"Telegram gönderim hatası: {e}")
+
+
+def check_telegram_messages():
+    if not TELEGRAM_BOT_TOKEN: return
+    
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT value FROM bot_state WHERE key='last_update_id'")
+    row = cursor.fetchone()
+    offset = int(row[0]) + 1 if row else 0
+    
+    api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates?offset={offset}&timeout=5"
+    import requests
+    try:
+        resp = requests.get(api_url).json()
+        if not resp.get("ok") or not resp.get("result"):
+            conn.close()
+            return
+            
+        max_update_id = offset - 1
+        for update in resp["result"]:
+            update_id = update["update_id"]
+            if update_id > max_update_id:
+                max_update_id = update_id
+                
+            if "message" in update and "text" in update["message"]:
+                text = update["message"]["text"]
+                chat_id = update["message"]["chat"]["id"]
+                
+                # Hashtag yakalama
+                added = []
+                removed = []
+                words = text.split()
+                
+                if text.strip() == "/liste":
+                    cursor.execute("SELECT keyword FROM custom_keywords")
+                    kws = cursor.fetchall()
+                    msg = "📋 **Özel Taramalarınız:**
+" + "
+".join([f"#{k[0]}" for k in kws]) if kws else "Liste boş."
+                    requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg})
+                    continue
+                
+                for w in words:
+                    if w.startswith("-#") and len(w) > 2:
+                        kw = w[2:].lower().replace("_", "+")
+                        cursor.execute("DELETE FROM custom_keywords WHERE keyword=?", (kw,))
+                        removed.append(kw)
+                    elif w.startswith("#") and len(w) > 1:
+                        kw = w[1:].lower().replace("_", "+")
+                        cursor.execute("INSERT OR IGNORE INTO custom_keywords (keyword) VALUES (?)", (kw,))
+                        added.append(kw)
+                
+                if added or removed:
+                    msg = ""
+                    if added: msg += f"✅ Eklendi: {', '.join(added)}
+"
+                    if removed: msg += f"🗑️ Silindi: {', '.join(removed)}"
+                    requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg.strip()})
+        
+        cursor.execute("INSERT OR REPLACE INTO bot_state (key, value) VALUES ('last_update_id', ?)", (str(max_update_id),))
+        conn.commit()
+    except Exception as e:
+        print("Telegram getUpdates hatasi:", e)
+    finally:
+        conn.close()
 
 def parse_price(price_str):
     if not price_str: return None
@@ -219,7 +298,25 @@ async def main():
         page = await context.new_page()
         await stealth_async(page)
         
-        print(f"\n--- GITHUB ACTIONS TARAMA TURU BAŞLIYOR: {datetime.now().strftime('%H:%M:%S')} ---")
+        print(f"
+--- GITHUB ACTIONS TARAMA TURU BAŞLIYOR: {datetime.now().strftime('%H:%M:%S')} ---")
+        
+        # Telegram mesajlarini oku
+        check_telegram_messages()
+        
+        # Ozel kelimeleri URL listesine ekle
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT keyword, threshold FROM custom_keywords")
+        custom_kws = cursor.fetchall()
+        conn.close()
+        
+        for kw, thresh in custom_kws:
+            search_url = f"https://www.amazon.com.tr/s?k={kw}"
+            # Eger listede yoksa ekle
+            if not any(item["url"] == search_url for item in URLS["Amazon"]):
+                URLS["Amazon"].append({"url": search_url, "threshold": thresh})
+                
         # Kanala her sabah 09:00 - 09:30 arası hayatta olduğunu haber ver
         now = datetime.now()
         if now.hour == 9 and now.minute < 30:
