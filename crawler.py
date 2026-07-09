@@ -22,6 +22,7 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 URLS = {
     "Amazon": [
+        # Mevcut Kategoriler
         {"url": "https://www.amazon.com.tr/b?node=13709907031", "threshold": 15.0}, # Elektronik
         {"url": "https://www.amazon.com.tr/b?node=13709930031", "threshold": 15.0}, # Yapi Market
         {"url": "https://www.amazon.com.tr/b?node=13710034031", "threshold": 15.0}, # Outdoor & Kamp
@@ -34,7 +35,20 @@ URLS = {
         {"url": "https://www.amazon.com.tr/s?k=kitap", "threshold": 15.0}, # Kitap
         {"url": "https://www.amazon.com.tr/s?k=otomobil", "threshold": 15.0}, # Otomotiv
         {"url": "https://www.amazon.com.tr/s?k=spor+aletleri", "threshold": 15.0}, # Spor
-        {"url": "https://www.amazon.com.tr/s?k=kisisel+bakim", "threshold": 15.0}, # Kisisel Bakim (Sampuan vb.)
+        
+        # Yeni Eklenen Spesifik Aramalar (Sniper Hedefleri)
+        {"url": "https://www.amazon.com.tr/s?k=termos", "threshold": 15.0},
+        {"url": "https://www.amazon.com.tr/s?k=cadir", "threshold": 15.0},
+        {"url": "https://www.amazon.com.tr/s?k=kamp+malzemeleri", "threshold": 15.0},
+        {"url": "https://www.amazon.com.tr/s?k=pirinc", "threshold": 15.0},
+        {"url": "https://www.amazon.com.tr/s?k=bulgur", "threshold": 15.0},
+        {"url": "https://www.amazon.com.tr/s?k=cay", "threshold": 15.0},
+        {"url": "https://www.amazon.com.tr/s?k=seker", "threshold": 15.0},
+        {"url": "https://www.amazon.com.tr/s?k=bal", "threshold": 15.0},
+        {"url": "https://www.amazon.com.tr/s?k=supermarket", "threshold": 15.0},
+        {"url": "https://www.amazon.com.tr/s?k=sampuan", "threshold": 15.0},
+        {"url": "https://www.amazon.com.tr/s?k=sac+kremi", "threshold": 15.0},
+        {"url": "https://www.amazon.com.tr/s?k=dis+macunu", "threshold": 15.0},
     ]
 }
 
