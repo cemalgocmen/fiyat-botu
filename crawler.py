@@ -22,21 +22,18 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 URLS = {
     "Amazon": [
-        "https://www.amazon.com.tr/b?node=13709907031", # Elektronik
-        "https://www.amazon.com.tr/b?node=13709930031", # Yapı Market (Hardware/DIY)
-        "https://www.amazon.com.tr/b?node=13710034031", # Outdoor & Kamp
-        "https://www.amazon.com.tr/b?node=12503610031", # Küçük Ev Aletleri
-        "https://www.amazon.com.tr/b?node=12503614031", # Mutfak Aletleri
-        "https://www.amazon.com.tr/s?k=bilgisayar", # Bilgisayar
-        "https://www.amazon.com.tr/s?k=televizyon", # Televizyon
-        "https://www.amazon.com.tr/s?k=giyim", # Moda & Giyim
-        "https://www.amazon.com.tr/s?k=oyuncak", # Oyuncak
-        "https://www.amazon.com.tr/s?k=kitap", # Kitap
-        "https://www.amazon.com.tr/s?k=kozmetik", # Kozmetik
-        "https://www.amazon.com.tr/s?k=otomobil", # Otomotiv
-        "https://www.amazon.com.tr/s?k=evcil+hayvan", # Evcil Hayvan
-        "https://www.amazon.com.tr/s?k=spor+aletleri", # Spor
-        "https://www.amazon.com.tr/s?k=mobilya", # Mobilya
+        {"url": "https://www.amazon.com.tr/b?node=13709907031", "threshold": 10.0}, # Elektronik
+        {"url": "https://www.amazon.com.tr/b?node=13709930031", "threshold": 15.0}, # Yapi Market
+        {"url": "https://www.amazon.com.tr/b?node=13710034031", "threshold": 15.0}, # Outdoor & Kamp
+        {"url": "https://www.amazon.com.tr/b?node=12503610031", "threshold": 10.0}, # Kucuk Ev Aletleri
+        {"url": "https://www.amazon.com.tr/b?node=12503614031", "threshold": 10.0}, # Mutfak Aletleri
+        {"url": "https://www.amazon.com.tr/s?k=bilgisayar", "threshold": 5.0}, # Bilgisayar
+        {"url": "https://www.amazon.com.tr/s?k=televizyon", "threshold": 8.0}, # Televizyon
+        {"url": "https://www.amazon.com.tr/s?k=giyim", "threshold": 20.0}, # Moda & Giyim
+        {"url": "https://www.amazon.com.tr/s?k=oyuncak", "threshold": 20.0}, # Oyuncak
+        {"url": "https://www.amazon.com.tr/s?k=kitap", "threshold": 15.0}, # Kitap
+        {"url": "https://www.amazon.com.tr/s?k=otomobil", "threshold": 12.0}, # Otomotiv
+        {"url": "https://www.amazon.com.tr/s?k=spor+aletleri", "threshold": 12.0}, # Spor
     ]
 }
 
@@ -83,7 +80,7 @@ def parse_price(price_str):
     except:
         return None
 
-def process_product(product_id, title, url, site, current_price):
+def process_product(product_id, title, url, site, current_price, threshold):
     if not current_price or not product_id:
         return
 
@@ -97,7 +94,7 @@ def process_product(product_id, title, url, site, current_price):
         old_price = result[0]
         if current_price < old_price:
             drop_percentage = ((old_price - current_price) / old_price) * 100
-            if drop_percentage >= 12.0:
+            if drop_percentage >= threshold:
                 send_telegram_alert(title, url, old_price, current_price, drop_percentage, site)
         cursor.execute('''
             UPDATE products 
@@ -118,7 +115,7 @@ async def scroll_down(page):
         await page.mouse.wheel(0, 1000)
         await asyncio.sleep(1)
 
-async def crawl_site(page, url, site):
+async def crawl_site(page, url, site, threshold):
     print(f"\n{site} taranıyor: {url}")
     try:
         await page.goto(url, wait_until="domcontentloaded", timeout=60000)
