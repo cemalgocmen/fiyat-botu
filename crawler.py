@@ -32,7 +32,6 @@ URLS = {
         {"url": "https://www.amazon.com.tr/s?k=televizyon", "threshold": 15.0}, # Televizyon
         {"url": "https://www.amazon.com.tr/s?k=giyim", "threshold": 15.0}, # Moda & Giyim
         {"url": "https://www.amazon.com.tr/s?k=oyuncak", "threshold": 15.0}, # Oyuncak
-        {"url": "https://www.amazon.com.tr/s?k=kitap", "threshold": 15.0}, # Kitap
         {"url": "https://www.amazon.com.tr/s?k=otomobil", "threshold": 15.0}, # Otomotiv
         {"url": "https://www.amazon.com.tr/s?k=spor+aletleri", "threshold": 15.0}, # Spor
         
