@@ -116,9 +116,15 @@ def check_telegram_messages():
             if update_id > max_update_id:
                 max_update_id = update_id
                 
+            msg_data = None
             if "message" in update and "text" in update["message"]:
-                text = update["message"]["text"]
-                chat_id = update["message"]["chat"]["id"]
+                msg_data = update["message"]
+            elif "edited_message" in update and "text" in update["edited_message"]:
+                msg_data = update["edited_message"]
+                
+            if msg_data:
+                text = msg_data["text"]
+                chat_id = msg_data["chat"]["id"]
                 
                 # Hashtag yakalama
                 added = []
