@@ -285,7 +285,7 @@ async def crawl_site(page, url, site, threshold):
         print(f"{site} -> Bu sayfada {len(products)} ürün bulundu ve işleniyor...")
         for pid, title, link, price in products:
             if pid and title and price:
-                process_product(f"{site}_{pid}", title, link, site, price)
+                process_product(f"{site}_{pid}", title, link, site, price, threshold)
                 
     except Exception as e:
         print(f"{site} tarama hatası: {e}")
