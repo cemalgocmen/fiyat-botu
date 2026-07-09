@@ -22,18 +22,19 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 URLS = {
     "Amazon": [
-        {"url": "https://www.amazon.com.tr/b?node=13709907031", "threshold": 10.0}, # Elektronik
+        {"url": "https://www.amazon.com.tr/b?node=13709907031", "threshold": 15.0}, # Elektronik
         {"url": "https://www.amazon.com.tr/b?node=13709930031", "threshold": 15.0}, # Yapi Market
         {"url": "https://www.amazon.com.tr/b?node=13710034031", "threshold": 15.0}, # Outdoor & Kamp
-        {"url": "https://www.amazon.com.tr/b?node=12503610031", "threshold": 10.0}, # Kucuk Ev Aletleri
-        {"url": "https://www.amazon.com.tr/b?node=12503614031", "threshold": 10.0}, # Mutfak Aletleri
-        {"url": "https://www.amazon.com.tr/s?k=bilgisayar", "threshold": 5.0}, # Bilgisayar
-        {"url": "https://www.amazon.com.tr/s?k=televizyon", "threshold": 8.0}, # Televizyon
-        {"url": "https://www.amazon.com.tr/s?k=giyim", "threshold": 20.0}, # Moda & Giyim
-        {"url": "https://www.amazon.com.tr/s?k=oyuncak", "threshold": 20.0}, # Oyuncak
+        {"url": "https://www.amazon.com.tr/b?node=12503610031", "threshold": 15.0}, # Kucuk Ev Aletleri
+        {"url": "https://www.amazon.com.tr/b?node=12503614031", "threshold": 15.0}, # Mutfak Aletleri
+        {"url": "https://www.amazon.com.tr/s?k=bilgisayar", "threshold": 15.0}, # Bilgisayar
+        {"url": "https://www.amazon.com.tr/s?k=televizyon", "threshold": 15.0}, # Televizyon
+        {"url": "https://www.amazon.com.tr/s?k=giyim", "threshold": 15.0}, # Moda & Giyim
+        {"url": "https://www.amazon.com.tr/s?k=oyuncak", "threshold": 15.0}, # Oyuncak
         {"url": "https://www.amazon.com.tr/s?k=kitap", "threshold": 15.0}, # Kitap
-        {"url": "https://www.amazon.com.tr/s?k=otomobil", "threshold": 12.0}, # Otomotiv
-        {"url": "https://www.amazon.com.tr/s?k=spor+aletleri", "threshold": 12.0}, # Spor
+        {"url": "https://www.amazon.com.tr/s?k=otomobil", "threshold": 15.0}, # Otomotiv
+        {"url": "https://www.amazon.com.tr/s?k=spor+aletleri", "threshold": 15.0}, # Spor
+        {"url": "https://www.amazon.com.tr/s?k=kisisel+bakim", "threshold": 15.0}, # Kisisel Bakim (Sampuan vb.)
     ]
 }
 
