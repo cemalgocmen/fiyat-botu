@@ -128,9 +128,7 @@ def check_telegram_messages():
                 if text.strip() == "/liste":
                     cursor.execute("SELECT keyword FROM custom_keywords")
                     kws = cursor.fetchall()
-                    msg = "📋 **Özel Taramalarınız:**
-" + "
-".join([f"#{k[0]}" for k in kws]) if kws else "Liste boş."
+                    msg = "📋 **Özel Taramalarınız:**\\n" + "\\n".join([f"#{k[0]}" for k in kws]) if kws else "Liste boş."
                     requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg})
                     continue
                 
@@ -146,8 +144,7 @@ def check_telegram_messages():
                 
                 if added or removed:
                     msg = ""
-                    if added: msg += f"✅ Eklendi: {', '.join(added)}
-"
+                    if added: msg += f"✅ Eklendi: {', '.join(added)}\\n"
                     if removed: msg += f"🗑️ Silindi: {', '.join(removed)}"
                     requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg.strip()})
         
@@ -298,8 +295,7 @@ async def main():
         page = await context.new_page()
         await stealth_async(page)
         
-        print(f"
---- GITHUB ACTIONS TARAMA TURU BAŞLIYOR: {datetime.now().strftime('%H:%M:%S')} ---")
+        print(f"\\n--- GITHUB ACTIONS TARAMA TURU BAŞLIYOR: {datetime.now().strftime('%H:%M:%S')} ---")
         
         # Telegram mesajlarini oku
         check_telegram_messages()
