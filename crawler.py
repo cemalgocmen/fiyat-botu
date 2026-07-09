@@ -219,8 +219,10 @@ async def main():
                 except Exception as e:
                     pass
                 
-        for site, links in URLS.items():
-            for base_url in links:
+        for site, items in URLS.items():
+            for item in items:
+                base_url = item["url"]
+                threshold = item["threshold"]
                 for page_num in range(1, 4): # İlk 3 sayfa
                     if page_num == 1:
                         page_url = base_url
@@ -235,7 +237,7 @@ async def main():
                         elif site == "Amazon":
                             page_url = f"{base_url}{sep}page={page_num}"
                             
-                    await crawl_site(page, page_url, site)
+                    await crawl_site(page, page_url, site, threshold)
                 await asyncio.sleep(2) 
         
         print("\nTur tamamlandı, tarayıcı kapatılıyor.")
