@@ -141,6 +141,20 @@ def check_telegram_messages():
                     requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg})
                     continue
                 
+                if text.strip().startswith("/oran"):
+                    parts = text.strip().split()
+                    if len(parts) > 1:
+                        oran_str = parts[1].replace('%', '')
+                        if oran_str.isdigit():
+                            yeni_oran = float(oran_str)
+                            cursor.execute("INSERT OR REPLACE INTO bot_state (key, value) VALUES ('global_threshold', ?)", (str(yeni_oran),))
+                            msg = f"✅ Global indirim oranı %{yeni_oran} olarak güncellendi! Tüm taramalar (ana kategoriler dahil) bu orana göre yapılacak."
+                            requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg})
+                            continue
+                    
+                    requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "❌ Hatalı kullanım. Örnek: /oran 15 veya /oran %20"})
+                    continue
+                
                 for w in words:
                     if w.startswith("-#") and len(w) > 2:
                         kw = w[2:].lower().replace("_", "+")
@@ -335,10 +349,17 @@ async def main():
                 except Exception as e:
                     pass
                 
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT value FROM bot_state WHERE key='global_threshold'")
+        row = cursor.fetchone()
+        conn.close()
+        global_threshold = float(row[0]) if row else None
+        
         for site, items in URLS.items():
             for item in items:
                 base_url = item["url"]
-                threshold = item["threshold"]
+                threshold = global_threshold if global_threshold else item["threshold"]
                 for page_num in range(1, 4): # İlk 3 sayfa
                     if page_num == 1:
                         page_url = base_url
