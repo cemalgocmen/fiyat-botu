@@ -23,31 +23,31 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 URLS = {
     "Amazon": [
         # Mevcut Kategoriler
-        {"url": "https://www.amazon.com.tr/b?node=13709907031", "threshold": 15.0}, # Elektronik
-        {"url": "https://www.amazon.com.tr/b?node=13709930031", "threshold": 15.0}, # Yapi Market
-        {"url": "https://www.amazon.com.tr/b?node=13710034031", "threshold": 15.0}, # Outdoor & Kamp
-        {"url": "https://www.amazon.com.tr/b?node=12503610031", "threshold": 15.0}, # Kucuk Ev Aletleri
-        {"url": "https://www.amazon.com.tr/b?node=12503614031", "threshold": 15.0}, # Mutfak Aletleri
-        {"url": "https://www.amazon.com.tr/s?k=bilgisayar", "threshold": 15.0}, # Bilgisayar
-        {"url": "https://www.amazon.com.tr/s?k=televizyon", "threshold": 15.0}, # Televizyon
-        {"url": "https://www.amazon.com.tr/s?k=giyim", "threshold": 15.0}, # Moda & Giyim
-        {"url": "https://www.amazon.com.tr/s?k=oyuncak", "threshold": 15.0}, # Oyuncak
-        {"url": "https://www.amazon.com.tr/s?k=otomobil", "threshold": 15.0}, # Otomotiv
-        {"url": "https://www.amazon.com.tr/s?k=spor+aletleri", "threshold": 15.0}, # Spor
+        {"url": "https://www.amazon.com.tr/b?node=13709907031", "threshold": 20.0}, # Elektronik
+        {"url": "https://www.amazon.com.tr/b?node=13709930031", "threshold": 20.0}, # Yapi Market
+        {"url": "https://www.amazon.com.tr/b?node=13710034031", "threshold": 20.0}, # Outdoor & Kamp
+        {"url": "https://www.amazon.com.tr/b?node=12503610031", "threshold": 20.0}, # Kucuk Ev Aletleri
+        {"url": "https://www.amazon.com.tr/b?node=12503614031", "threshold": 20.0}, # Mutfak Aletleri
+        {"url": "https://www.amazon.com.tr/s?k=bilgisayar", "threshold": 20.0}, # Bilgisayar
+        {"url": "https://www.amazon.com.tr/s?k=televizyon", "threshold": 20.0}, # Televizyon
+        {"url": "https://www.amazon.com.tr/s?k=giyim", "threshold": 20.0}, # Moda & Giyim
+        {"url": "https://www.amazon.com.tr/s?k=oyuncak", "threshold": 20.0}, # Oyuncak
+        {"url": "https://www.amazon.com.tr/s?k=otomobil", "threshold": 20.0}, # Otomotiv
+        {"url": "https://www.amazon.com.tr/s?k=spor+aletleri", "threshold": 20.0}, # Spor
         
         # Yeni Eklenen Spesifik Aramalar (Sniper Hedefleri)
-        {"url": "https://www.amazon.com.tr/s?k=termos", "threshold": 15.0},
-        {"url": "https://www.amazon.com.tr/s?k=cadir", "threshold": 15.0},
-        {"url": "https://www.amazon.com.tr/s?k=kamp+malzemeleri", "threshold": 15.0},
-        {"url": "https://www.amazon.com.tr/s?k=pirinc", "threshold": 15.0},
-        {"url": "https://www.amazon.com.tr/s?k=bulgur", "threshold": 15.0},
-        {"url": "https://www.amazon.com.tr/s?k=cay", "threshold": 15.0},
-        {"url": "https://www.amazon.com.tr/s?k=seker", "threshold": 15.0},
-        {"url": "https://www.amazon.com.tr/s?k=bal", "threshold": 15.0},
-        {"url": "https://www.amazon.com.tr/s?k=supermarket", "threshold": 15.0},
-        {"url": "https://www.amazon.com.tr/s?k=sampuan", "threshold": 15.0},
-        {"url": "https://www.amazon.com.tr/s?k=sac+kremi", "threshold": 15.0},
-        {"url": "https://www.amazon.com.tr/s?k=dis+macunu", "threshold": 15.0},
+        {"url": "https://www.amazon.com.tr/s?k=termos", "threshold": 20.0},
+        {"url": "https://www.amazon.com.tr/s?k=cadir", "threshold": 20.0},
+        {"url": "https://www.amazon.com.tr/s?k=kamp+malzemeleri", "threshold": 20.0},
+        {"url": "https://www.amazon.com.tr/s?k=pirinc", "threshold": 20.0},
+        {"url": "https://www.amazon.com.tr/s?k=bulgur", "threshold": 20.0},
+        {"url": "https://www.amazon.com.tr/s?k=cay", "threshold": 20.0},
+        {"url": "https://www.amazon.com.tr/s?k=seker", "threshold": 20.0},
+        {"url": "https://www.amazon.com.tr/s?k=bal", "threshold": 20.0},
+        {"url": "https://www.amazon.com.tr/s?k=supermarket", "threshold": 20.0},
+        {"url": "https://www.amazon.com.tr/s?k=sampuan", "threshold": 20.0},
+        {"url": "https://www.amazon.com.tr/s?k=sac+kremi", "threshold": 20.0},
+        {"url": "https://www.amazon.com.tr/s?k=dis+macunu", "threshold": 20.0},
     ]
 }
 
@@ -68,7 +68,7 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS custom_keywords (
             keyword TEXT PRIMARY KEY,
-            threshold REAL DEFAULT 15.0
+            threshold REAL DEFAULT 20.0
         )
     ''')
     cursor.execute('''
@@ -77,6 +77,10 @@ def init_db():
             value TEXT
         )
     ''')
+    
+    # Mevcut keywordlerin threshold'unu 20'ye guncelle
+    cursor.execute("UPDATE custom_keywords SET threshold = 20.0 WHERE threshold < 20.0")
+    
     conn.commit()
     conn.close()
 
