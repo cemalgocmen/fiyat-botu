@@ -2,7 +2,7 @@ name: Fiyat Botu
 
 on:
   schedule:
-    - cron: '0 */2 * * *' (Bu her 2 saatte bir anlamına geliyor)
+     - cron: '*/30 * * * *'
   workflow_dispatch: # Manuel tetikleme butonu
 
 permissions:
