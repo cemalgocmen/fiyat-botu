@@ -22,32 +22,7 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 URLS = {
     "Amazon": [
-        # Mevcut Kategoriler
-        {"url": "https://www.amazon.com.tr/b?node=13709907031", "threshold": 20.0}, # Elektronik
-        {"url": "https://www.amazon.com.tr/b?node=13709930031", "threshold": 20.0}, # Yapi Market
-        {"url": "https://www.amazon.com.tr/b?node=13710034031", "threshold": 20.0}, # Outdoor & Kamp
-        {"url": "https://www.amazon.com.tr/b?node=12503610031", "threshold": 20.0}, # Kucuk Ev Aletleri
-        {"url": "https://www.amazon.com.tr/b?node=12503614031", "threshold": 20.0}, # Mutfak Aletleri
-        {"url": "https://www.amazon.com.tr/s?k=bilgisayar", "threshold": 20.0}, # Bilgisayar
-        {"url": "https://www.amazon.com.tr/s?k=televizyon", "threshold": 20.0}, # Televizyon
-        {"url": "https://www.amazon.com.tr/s?k=giyim", "threshold": 20.0}, # Moda & Giyim
-        {"url": "https://www.amazon.com.tr/s?k=oyuncak", "threshold": 20.0}, # Oyuncak
-        {"url": "https://www.amazon.com.tr/s?k=otomobil", "threshold": 20.0}, # Otomotiv
-        {"url": "https://www.amazon.com.tr/s?k=spor+aletleri", "threshold": 20.0}, # Spor
-        
-        # Yeni Eklenen Spesifik Aramalar (Sniper Hedefleri)
-        {"url": "https://www.amazon.com.tr/s?k=termos", "threshold": 20.0},
-        {"url": "https://www.amazon.com.tr/s?k=cadir", "threshold": 20.0},
-        {"url": "https://www.amazon.com.tr/s?k=kamp+malzemeleri", "threshold": 20.0},
-        {"url": "https://www.amazon.com.tr/s?k=pirinc", "threshold": 20.0},
-        {"url": "https://www.amazon.com.tr/s?k=bulgur", "threshold": 20.0},
-        {"url": "https://www.amazon.com.tr/s?k=cay", "threshold": 20.0},
-        {"url": "https://www.amazon.com.tr/s?k=seker", "threshold": 20.0},
-        {"url": "https://www.amazon.com.tr/s?k=bal", "threshold": 20.0},
-        {"url": "https://www.amazon.com.tr/s?k=supermarket", "threshold": 20.0},
-        {"url": "https://www.amazon.com.tr/s?k=sampuan", "threshold": 20.0},
-        {"url": "https://www.amazon.com.tr/s?k=sac+kremi", "threshold": 20.0},
-        {"url": "https://www.amazon.com.tr/s?k=dis+macunu", "threshold": 20.0},
+        # Sabit kategoriler tamamen kaldırıldı. Sadece Telegram'dan gelen kelimeler taranacak.
     ]
 }
 
@@ -390,7 +365,7 @@ async def main():
             for item in items:
                 base_url = item["url"]
                 threshold = global_threshold if global_threshold else item["threshold"]
-                for page_num in range(1, 2): # Sadece İlk Sayfa (Kota tasarrufu için)
+                for page_num in range(1, 11): # Telegram kelimeleri için ilk 10 sayfayı derinlemesine tara
                     if page_num == 1:
                         page_url = base_url
                     else:
