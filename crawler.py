@@ -336,7 +336,8 @@ async def main():
         conn.close()
         
         for kw, thresh in custom_kws:
-            search_url = f"https://www.amazon.com.tr/s?k={kw}"
+            # Sadece Amazon.com.tr saticisini filtreleyen parametre: &rh=p_6%3AA1UNQM1SR2CHM
+            search_url = f"https://www.amazon.com.tr/s?k={kw}&rh=p_6%3AA1UNQM1SR2CHM"
             # Eger listede yoksa ekle
             if not any(item["url"] == search_url for item in URLS["Amazon"]):
                 URLS["Amazon"].append({"url": search_url, "threshold": thresh})
