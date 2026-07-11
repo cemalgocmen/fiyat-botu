@@ -155,6 +155,17 @@ def check_telegram_messages():
                     requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "❌ Hatalı kullanım. Örnek: /oran 15 veya /oran %20"})
                     continue
                 
+                if text.strip().startswith("/sure"):
+                    parts = text.strip().split()
+                    if len(parts) > 1 and parts[1].isdigit():
+                        yeni_sure = int(parts[1])
+                        cursor.execute("INSERT OR REPLACE INTO bot_state (key, value) VALUES ('scan_interval', ?)", (str(yeni_sure),))
+                        msg = f"⏱️ Tarama sıklığı {yeni_sure} dakika olarak güncellendi! Bot artık {yeni_sure} dakikada bir Amazon'a bağlanacak."
+                        requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg})
+                        continue
+                    requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "❌ Hatalı kullanım. Örnek: /sure 120"})
+                    continue
+                
                 for w in words:
                     if w.startswith("-#") and len(w) > 2:
                         kw = w[2:].lower().replace("_", "+")
@@ -310,6 +321,30 @@ async def crawl_site(page, url, site, threshold):
 async def main():
     init_db()
     
+    # Telegram mesajlarini oku
+    check_telegram_messages()
+    
+    # Erken Çıkış (Early Exit) Kontrolü
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT value FROM bot_state WHERE key='scan_interval'")
+    row = cursor.fetchone()
+    scan_interval = int(row[0]) if row else 120 # Varsayilan 120 dakika
+    
+    cursor.execute("SELECT value FROM bot_state WHERE key='last_full_scan'")
+    row = cursor.fetchone()
+    last_full_scan = float(row[0]) if row else 0.0
+    
+    current_time = datetime.now().timestamp()
+    if current_time - last_full_scan < (scan_interval * 60):
+        print(f"Tarama sıklığı ({scan_interval} dk) henüz dolmadı. Sadece mesajlar okundu. Çıkılıyor.")
+        conn.close()
+        return
+        
+    cursor.execute("INSERT OR REPLACE INTO bot_state (key, value) VALUES ('last_full_scan', ?)", (str(current_time),))
+    conn.commit()
+    
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
@@ -320,12 +355,7 @@ async def main():
         
         print(f"\\n--- GITHUB ACTIONS TARAMA TURU BAŞLIYOR: {datetime.now().strftime('%H:%M:%S')} ---")
         
-        # Telegram mesajlarini oku
-        check_telegram_messages()
-        
         # Ozel kelimeleri URL listesine ekle
-        conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
         cursor.execute("SELECT keyword, threshold FROM custom_keywords")
         custom_kws = cursor.fetchall()
         conn.close()
@@ -360,7 +390,7 @@ async def main():
             for item in items:
                 base_url = item["url"]
                 threshold = global_threshold if global_threshold else item["threshold"]
-                for page_num in range(1, 4): # İlk 3 sayfa
+                for page_num in range(1, 2): # Sadece İlk Sayfa (Kota tasarrufu için)
                     if page_num == 1:
                         page_url = base_url
                     else:
