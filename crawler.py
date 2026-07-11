@@ -336,11 +336,15 @@ async def main():
         conn.close()
         
         for kw, thresh in custom_kws:
-            # Sadece Amazon.com.tr saticisini filtreleyen parametre: &rh=p_6%3AA1UNQM1SR2CHM
-            search_url = f"https://www.amazon.com.tr/s?k={kw}&rh=p_6%3AA1UNQM1SR2CHM"
-            # Eger listede yoksa ekle
-            if not any(item["url"] == search_url for item in URLS["Amazon"]):
-                URLS["Amazon"].append({"url": search_url, "threshold": thresh})
+            # Sadece Amazon.com.tr (Sıfır) saticisini filtreleyen URL
+            search_url_amz = f"https://www.amazon.com.tr/s?k={kw}&rh=p_6%3AA1UNQM1SR2CHM"
+            if not any(item["url"] == search_url_amz for item in URLS["Amazon"]):
+                URLS["Amazon"].append({"url": search_url_amz, "threshold": thresh})
+                
+            # Sadece Amazon Depo (Fırsatları) aramasını filtreleyen URL
+            search_url_depo = f"https://www.amazon.com.tr/s?k={kw}&node=44219324031"
+            if not any(item["url"] == search_url_depo for item in URLS["Amazon"]):
+                URLS["Amazon"].append({"url": search_url_depo, "threshold": thresh})
                 
         # Kanala her sabah 09:00 - 09:30 arası hayatta olduğunu haber ver
         now = datetime.now()
