@@ -56,6 +56,12 @@ def init_db():
     # Mevcut keywordlerin threshold'unu 20'ye guncelle
     cursor.execute("UPDATE custom_keywords SET threshold = 20.0 WHERE threshold < 20.0")
     
+    # Yeni eklenecek sutun (ayni gun tekrar gondermemek icin)
+    try:
+        cursor.execute("ALTER TABLE products ADD COLUMN last_alert_date TEXT")
+    except sqlite3.OperationalError:
+        pass # Sutun zaten varsa hata verir, gormezden gel
+
     conn.commit()
     conn.close()
 
@@ -186,16 +192,22 @@ def process_product(product_id, title, url, site, current_price, threshold):
 
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute("SELECT current_price FROM products WHERE id=?", (product_id,))
+    cursor.execute("SELECT current_price, last_alert_date FROM products WHERE id=?", (product_id,))
     result = cursor.fetchone()
     now = datetime.now()
+    today_str = now.strftime("%Y-%m-%d")
     
     if result:
         old_price = result[0]
+        last_alert_date = result[1] if len(result) > 1 else None
+        
         if current_price < old_price:
             drop_percentage = ((old_price - current_price) / old_price) * 100
             if drop_percentage >= threshold:
-                send_telegram_alert(title, url, old_price, current_price, drop_percentage, site)
+                # Eger bugun icinde bu urun icin zaten bildirim gittiyse atla
+                if last_alert_date != today_str:
+                    send_telegram_alert(title, url, old_price, current_price, drop_percentage, site)
+                    cursor.execute("UPDATE products SET last_alert_date=? WHERE id=?", (today_str, product_id))
         cursor.execute('''
             UPDATE products 
             SET current_price=?, last_checked=?, lowest_price = MIN(lowest_price, ?) 
