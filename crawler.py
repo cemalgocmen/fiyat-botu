@@ -192,7 +192,7 @@ def process_product(product_id, title, url, site, current_price, threshold):
 
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute("SELECT current_price, last_alert_date FROM products WHERE id=?", (product_id,))
+    cursor.execute("SELECT current_price, last_alert_date, lowest_price FROM products WHERE id=?", (product_id,))
     result = cursor.fetchone()
     now = datetime.now()
     today_str = now.strftime("%Y-%m-%d")
@@ -200,12 +200,14 @@ def process_product(product_id, title, url, site, current_price, threshold):
     if result:
         old_price = result[0]
         last_alert_date = result[1] if len(result) > 1 else None
+        lowest_price = result[2] if len(result) > 2 else old_price
         
         if current_price < old_price:
             drop_percentage = ((old_price - current_price) / old_price) * 100
             if drop_percentage >= threshold:
-                # Eger bugun icinde bu urun icin zaten bildirim gittiyse atla
-                if last_alert_date != today_str:
+                # Eger bugun icinde bu urun icin zaten bildirim gittiyse atla,
+                # AMA fiyat daha da dusup 'en dip' (lowest_price) seviyesini gorduyse mutlaka gonder!
+                if last_alert_date != today_str or current_price < lowest_price:
                     send_telegram_alert(title, url, old_price, current_price, drop_percentage, site)
                     cursor.execute("UPDATE products SET last_alert_date=? WHERE id=?", (today_str, product_id))
         cursor.execute('''
