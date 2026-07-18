@@ -52,6 +52,13 @@ def init_db():
             value TEXT
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS sent_messages (
+            message_id INTEGER PRIMARY KEY,
+            chat_id TEXT,
+            sent_at TIMESTAMP
+        )
+    ''')
     
     # Mevcut keywordlerin threshold'unu 20'ye guncelle
     cursor.execute("UPDATE custom_keywords SET threshold = 20.0 WHERE threshold < 20.0")
@@ -71,7 +78,15 @@ def send_telegram_alert(title, url, old_price, new_price, drop_percentage, site)
         msg = f"🔥 BÜYÜK İNDİRİM ({site}) 🔥\n\nÜrün: {title}\nEski Fiyat: {old_price} TL\nYeni Fiyat: {new_price} TL\nİndirim: %{drop_percentage:.2f}\nLink: {url}"
         api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         try:
-            requests.post(api_url, json={"chat_id": TELEGRAM_CHAT_ID, "text": msg})
+            resp = requests.post(api_url, json={"chat_id": TELEGRAM_CHAT_ID, "text": msg}).json()
+            if resp.get("ok"):
+                message_id = resp["result"]["message_id"]
+                conn = sqlite3.connect(DB_FILE)
+                c = conn.cursor()
+                c.execute("INSERT INTO sent_messages (message_id, chat_id, sent_at) VALUES (?, ?, ?)", 
+                          (message_id, str(TELEGRAM_CHAT_ID), datetime.now().timestamp()))
+                conn.commit()
+                conn.close()
         except Exception as e:
             print(f"Telegram gönderim hatası: {e}")
 
@@ -145,6 +160,22 @@ def check_telegram_messages():
                         requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg})
                         continue
                     requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "❌ Hatalı kullanım. Örnek: /sure 120"})
+                    continue
+                
+                if text.strip().startswith("/sil"):
+                    parts = text.strip().split()
+                    if len(parts) > 1 and parts[1].isdigit():
+                        sil_sure = int(parts[1])
+                        cursor.execute("INSERT OR REPLACE INTO bot_state (key, value) VALUES ('auto_delete_hours', ?)", (str(sil_sure),))
+                        msg = f"🧹 Otomatik silme aktif! Bundan sonra gönderilen indirim mesajları {sil_sure} saat sonra gruptan silinecek."
+                        requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg})
+                        continue
+                    elif len(parts) > 1 and parts[1].lower() == "kapat":
+                        cursor.execute("DELETE FROM bot_state WHERE key='auto_delete_hours'")
+                        msg = f"🛑 Otomatik silme kapatıldı! Mesajlar artık kalıcı olacak."
+                        requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg})
+                        continue
+                    requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "❌ Hatalı kullanım. Örnek: /sil 12 veya /sil 24 (Kapatmak için: /sil kapat)"})
                     continue
                 
                 for w in words:
@@ -307,8 +338,40 @@ async def crawl_site(page, url, site, threshold):
     except Exception as e:
         print(f"{site} tarama hatası: {e}")
 
+def cleanup_old_messages():
+    if not TELEGRAM_BOT_TOKEN: return
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT value FROM bot_state WHERE key='auto_delete_hours'")
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        return
+        
+    auto_delete_hours = int(row[0])
+    threshold_ts = datetime.now().timestamp() - (auto_delete_hours * 3600)
+    
+    try:
+        cursor.execute("SELECT message_id, chat_id FROM sent_messages WHERE sent_at < ?", (threshold_ts,))
+        old_messages = cursor.fetchall()
+        
+        import requests
+        for msg_id, chat_id in old_messages:
+            try:
+                api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/deleteMessage"
+                requests.post(api_url, json={"chat_id": chat_id, "message_id": msg_id})
+                cursor.execute("DELETE FROM sent_messages WHERE message_id=?", (msg_id,))
+            except:
+                pass
+    except sqlite3.OperationalError:
+        pass # Tablo henuz yoksa gormezden gel
+        
+    conn.commit()
+    conn.close()
+
 async def main():
     init_db()
+    cleanup_old_messages()
     
     # Telegram mesajlarini oku
     check_telegram_messages()
