@@ -360,19 +360,7 @@ async def main():
             if not any(item["url"] == search_url_depo for item in URLS["Amazon"]):
                 URLS["Amazon"].append({"url": search_url_depo, "threshold": thresh})
                 
-        # Kanala her sabah 09:00 - 09:30 arası hayatta olduğunu haber ver
-        now = datetime.now()
-        if now.hour == 9 and now.minute < 30:
-            if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
-                import requests
-                try:
-                    requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={
-                        "chat_id": TELEGRAM_CHAT_ID,
-                        "text": "🌅 GÜNLÜK KONTROL: Günaydın! Fiyat Botu sapasağlam hayatta ve dünden beri aralıksız taramaya devam ediyor. Bugün de nöbetteyiz! 🕵️‍♂️"
-                    })
-                except Exception as e:
-                    pass
-                
+
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
         cursor.execute("SELECT value FROM bot_state WHERE key='global_threshold'")
