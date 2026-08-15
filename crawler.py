@@ -178,6 +178,17 @@ def check_telegram_messages():
                     requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "❌ Hatalı kullanım. Örnek: /sil 12 veya /sil 24 (Kapatmak için: /sil kapat)"})
                     continue
                 
+                if text.strip().startswith("/cooldown"):
+                    parts = text.strip().split()
+                    if len(parts) > 1 and parts[1].isdigit():
+                        yeni_gun = int(parts[1])
+                        cursor.execute("INSERT OR REPLACE INTO bot_state (key, value) VALUES ('cooldown_days', ?)", (str(yeni_gun),))
+                        msg = f"⏳ Soğuma süresi {yeni_gun} gün olarak ayarlandı! Aynı ürün (en düşük fiyat rekoru kırmadığı sürece) {yeni_gun} gün boyunca tekrar indirim mesajı atmayacak."
+                        requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg})
+                        continue
+                    requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "❌ Hatalı kullanım. Örnek: /cooldown 3 veya /cooldown 5"})
+                    continue
+                
                 for w in words:
                     if w.startswith("-#") and len(w) > 2:
                         kw = w[2:].lower().replace("_", "+")
@@ -223,6 +234,11 @@ def process_product(product_id, title, url, site, current_price, threshold):
 
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
+    
+    cursor.execute("SELECT value FROM bot_state WHERE key='cooldown_days'")
+    cd_row = cursor.fetchone()
+    cooldown_days = int(cd_row[0]) if cd_row else 3
+    
     cursor.execute("SELECT current_price, last_alert_date, lowest_price FROM products WHERE id=?", (product_id,))
     result = cursor.fetchone()
     now = datetime.now()
@@ -236,9 +252,16 @@ def process_product(product_id, title, url, site, current_price, threshold):
         if current_price < old_price:
             drop_percentage = ((old_price - current_price) / old_price) * 100
             if drop_percentage >= threshold:
-                # Eger bugun icinde bu urun icin zaten bildirim gittiyse atla,
-                # AMA fiyat daha da dusup 'en dip' (lowest_price) seviyesini gorduyse mutlaka gonder!
-                if last_alert_date != today_str or current_price < lowest_price:
+                days_since_alert = cooldown_days + 1
+                if last_alert_date:
+                    try:
+                        last_alert_dt = datetime.strptime(last_alert_date, "%Y-%m-%d")
+                        days_since_alert = (now - last_alert_dt).days
+                    except:
+                        pass
+                
+                # Eger belirlenen cooldown_days kadar gün geçtiyse VEYA fiyat daha da dusup 'en dip' (lowest_price) seviyesini gorduyse mutlaka gonder!
+                if days_since_alert >= cooldown_days or current_price < lowest_price:
                     send_telegram_alert(title, url, old_price, current_price, drop_percentage, site)
                     cursor.execute("UPDATE products SET last_alert_date=? WHERE id=?", (today_str, product_id))
         cursor.execute('''
