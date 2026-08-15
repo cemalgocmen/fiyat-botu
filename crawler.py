@@ -392,8 +392,24 @@ def cleanup_old_messages():
     conn.commit()
     conn.close()
 
+def cleanup_database():
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        # Son 7 gundur hic guncellenmeyen urunleri sil (eski urunler, kalkmis linkler vs.)
+        cursor.execute("DELETE FROM products WHERE last_checked < datetime('now', '-7 days')")
+        conn.commit()
+        # Veritabanindaki bosluklari geri kazanmak icin VACUUM yap
+        cursor.execute("VACUUM")
+        conn.commit()
+    except Exception as e:
+        print("Veritabani temizlik hatasi:", e)
+    finally:
+        conn.close()
+
 async def main():
     init_db()
+    cleanup_database()
     cleanup_old_messages()
     
     # Telegram mesajlarini oku
