@@ -145,6 +145,25 @@ def check_telegram_messages():
                     else:
                         requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "❌ Hata: Grup ID'si bulunamadı!"})
                     continue
+
+                if text.strip() == "/yardim":
+                    help_text = (
+                        "🤖 *Amazon Fiyat Botu - Kullanım Kılavuzu*\n\n"
+                        "📌 *Ürün Arama Komutları*\n"
+                        "• `#kelime`: Aranacak kelimeyi ekler (Örn: `#telefon`)\n"
+                        "• `-#kelime`: Kelimeyi siler (Örn: `-#telefon`)\n"
+                        "• `/liste`: Takip edilen kelimeleri gösterir.\n\n"
+                        "⚙️ *İndirim ve Tarama Ayarları*\n"
+                        "• `/oran <yüzde>`: İndirim eşiğini ayarlar (Örn: `/oran 15`)\n"
+                        "• `/sure <dakika>`: Tarama sıklığını ayarlar (Örn: `/sure 60`)\n\n"
+                        "🧹 *Spam Önlemleri*\n"
+                        "• `/cooldown <gün>`: Tekrarlayan indirimler için bekleme süresi (Örn: `/cooldown 3`)\n"
+                        "• `/sil <saat>`: Atılan indirim mesajları kaç saat sonra silinsin (Örn: `/sil 24` veya `/sil kapat`)\n\n"
+                        "🚀 *Test*\n"
+                        "• `/test`: Sistemin gruba bağlantısını test eder."
+                    )
+                    requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": help_text, "parse_mode": "Markdown"})
+                    continue
                 
                 if text.strip().startswith("/oran"):
                     parts = text.strip().split()
