@@ -133,8 +133,17 @@ def check_telegram_messages():
                 if text.strip() == "/liste":
                     cursor.execute("SELECT keyword FROM custom_keywords")
                     kws = cursor.fetchall()
-                    msg = "📋 **Özel Taramalarınız:**\\n" + "\\n".join([f"#{k[0]}" for k in kws]) if kws else "Liste boş."
+                    msg = "📋 **Özel Taramalarınız:**\n" + "\n".join([f"#{k[0]}" for k in kws]) if kws else "Liste boş."
                     requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg})
+                    continue
+                
+                if text.strip() == "/test":
+                    if TELEGRAM_CHAT_ID:
+                        test_msg = "🚀 Sistem Testi: Amazon İndirim Botu aktif ve bu gruba başarıyla mesaj gönderebiliyor!"
+                        requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": TELEGRAM_CHAT_ID, "text": test_msg})
+                        requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "✅ Test mesajı başarıyla indirim grubuna ateşlendi!"})
+                    else:
+                        requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "❌ Hata: Grup ID'si bulunamadı!"})
                     continue
                 
                 if text.strip().startswith("/oran"):
