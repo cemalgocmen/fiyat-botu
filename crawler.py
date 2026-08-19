@@ -502,7 +502,7 @@ async def main():
             for item in items:
                 base_url = item["url"]
                 threshold = global_threshold if global_threshold else item["threshold"]
-                for page_num in range(1, 11): # Telegram kelimeleri için ilk 10 sayfayı derinlemesine tara
+                for page_num in range(1, 6): # Telegram kelimeleri için ilk 10 sayfayı derinlemesine tara
                     if page_num == 1:
                         page_url = base_url
                     else:
