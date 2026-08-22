@@ -430,7 +430,7 @@ async def main():
             if not any(item["url"] == search_url_amz for item in URLS["Amazon"]):
                 URLS["Amazon"].append({"url": search_url_amz, "threshold": thresh})
                 
-            search_url_depo = f"https://www.amazon.com.tr/s?k={kw}&node=44219324031"
+            search_url_depo = f"https://www.amazon.com.tr/s?k={kw}&node=22780181031"
             if not any(item["url"] == search_url_depo for item in URLS["Amazon"]):
                 URLS["Amazon"].append({"url": search_url_depo, "threshold": thresh})
 
