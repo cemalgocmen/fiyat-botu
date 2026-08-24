@@ -77,7 +77,7 @@ async def send_telegram_alert(title, url, old_price, new_price, drop_percentage,
     if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
         import requests
         if site == "Amazon_Depo" and drop_percentage == 0:
-            msg = f"📦 DİKKAT DEPO FIRSATI 📦\n\nÜrün: {title}\nFiyat: {new_price} TL\nLink: {url}"
+            msg = f"📦 DEPO FIRSATI 📦\n\nÜrün: {title}\nFiyat: {new_price} TL\nLink: {url}"
         else:
             msg = f"🔥 İNDİRİM ({site}) 🔥\n\nÜrün: {title}\nEski Fiyat: {old_price} TL\nYeni Fiyat: {new_price} TL\nİndirim: %{drop_percentage:.2f}\nLink: {url}"
             
