@@ -77,9 +77,9 @@ async def send_telegram_alert(title, url, old_price, new_price, drop_percentage,
     if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
         import requests
         if site == "Amazon_Depo" and drop_percentage == 0:
-            msg = f"📦 YENİ FIRSAT ÜRÜNÜ (Amazon Depo) 📦\n\nÜrün: {title}\nFiyat: {new_price} TL\nLink: {url}"
+            msg = f"📦 DİKKAT DEPO FIRSATI 📦\n\nÜrün: {title}\nFiyat: {new_price} TL\nLink: {url}"
         else:
-            msg = f"🔥 BÜYÜK İNDİRİM ({site}) 🔥\n\nÜrün: {title}\nEski Fiyat: {old_price} TL\nYeni Fiyat: {new_price} TL\nİndirim: %{drop_percentage:.2f}\nLink: {url}"
+            msg = f"🔥 İNDİRİM ({site}) 🔥\n\nÜrün: {title}\nEski Fiyat: {old_price} TL\nYeni Fiyat: {new_price} TL\nİndirim: %{drop_percentage:.2f}\nLink: {url}"
             
         api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         try:
@@ -460,8 +460,8 @@ async def main():
                 base_url = item["url"]
                 is_depo_flag = item.get("is_depo", False)
                 threshold = global_threshold if global_threshold else item["threshold"]
-                # Tarama sayfasini sistemi yormamak icin ilk 5 sayfa olarak revize ettik
-                for page_num in range(1, 6):
+                # Tarama sayfasini sistemi yormamak icin 10 sayfa olarak revize ettik
+                for page_num in range(1, 11):
                     if page_num == 1:
                         page_url = base_url
                     else:
