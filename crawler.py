@@ -76,7 +76,11 @@ async def init_db():
 async def send_telegram_alert(title, url, old_price, new_price, drop_percentage, site):
     if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
         import requests
-        msg = f"🔥 BÜYÜK İNDİRİM ({site}) 🔥\n\nÜrün: {title}\nEski Fiyat: {old_price} TL\nYeni Fiyat: {new_price} TL\nİndirim: %{drop_percentage:.2f}\nLink: {url}"
+        if site == "Amazon_Depo" and drop_percentage == 0:
+            msg = f"📦 YENİ FIRSAT ÜRÜNÜ (Amazon Depo) 📦\n\nÜrün: {title}\nFiyat: {new_price} TL\nLink: {url}"
+        else:
+            msg = f"🔥 BÜYÜK İNDİRİM ({site}) 🔥\n\nÜrün: {title}\nEski Fiyat: {old_price} TL\nYeni Fiyat: {new_price} TL\nİndirim: %{drop_percentage:.2f}\nLink: {url}"
+            
         api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         try:
             loop = asyncio.get_event_loop()
@@ -272,7 +276,12 @@ async def process_product(product_id, title, url, site, current_price, threshold
             
             if current_price < old_price:
                 drop_percentage = ((old_price - current_price) / old_price) * 100
-                if drop_percentage >= threshold:
+                
+                effective_threshold = threshold
+                if site == "Amazon_Depo":
+                    effective_threshold = 0.0 # Depo ürünlerinde herhangi bir fiyat düşüşü bildirilir
+                    
+                if drop_percentage >= effective_threshold:
                     days_since_alert = cooldown_days + 1
                     if last_alert_date:
                         try:
@@ -290,10 +299,18 @@ async def process_product(product_id, title, url, site, current_price, threshold
                 WHERE id=?
             ''', (current_price, now, current_price, product_id))
         else:
-            await conn.execute('''
-                INSERT INTO products (id, title, url, site, current_price, last_checked, lowest_price)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (product_id, title, url, site, current_price, now, current_price))
+            if site == "Amazon_Depo":
+                # Depoda yeni gorulen urunler direkt Telegrama atilir (eski fiyat sifir kabul edilir, yuzde hesabi yapilmaz)
+                await send_telegram_alert(title, url, current_price, current_price, 0.0, site)
+                await conn.execute('''
+                    INSERT INTO products (id, title, url, site, current_price, last_checked, lowest_price, last_alert_date)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (product_id, title, url, site, current_price, now, current_price, today_str))
+            else:
+                await conn.execute('''
+                    INSERT INTO products (id, title, url, site, current_price, last_checked, lowest_price)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (product_id, title, url, site, current_price, now, current_price))
             
         await conn.commit()
 
@@ -302,7 +319,7 @@ async def scroll_down(page):
         await page.mouse.wheel(0, 1000)
         await asyncio.sleep(1)
 
-async def crawl_site(context, url, site, threshold, semaphore):
+async def crawl_site(context, url, site, threshold, semaphore, is_depo=False):
     async with semaphore:
         print(f"\n{site} taranıyor: {url}")
         page = await context.new_page()
@@ -338,7 +355,8 @@ async def crawl_site(context, url, site, threshold, semaphore):
             print(f"{site} -> Bu sayfada {len(products)} ürün bulundu ve işleniyor...")
             for pid, title, link, price in products:
                 if pid and title and price:
-                    await process_product(f"{site}_{pid}", title, link, site, price, threshold)
+                    actual_site = "Amazon_Depo" if is_depo else site
+                    await process_product(f"{actual_site}_{pid}", title, link, actual_site, price, threshold)
                     
         except Exception as e:
             print(f"{site} tarama hatası: {e}")
@@ -409,7 +427,6 @@ async def main():
         await conn.commit()
     
     async with async_playwright() as p:
-        # Proxy eklemek icin asagidaki yapi kullanilabilir: proxy={"server": "http://user:pass@ip:port"}
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -428,11 +445,11 @@ async def main():
         for kw, thresh in custom_kws:
             search_url_amz = f"https://www.amazon.com.tr/s?k={kw}&rh=p_6%3AA1UNQM1SR2CHM"
             if not any(item["url"] == search_url_amz for item in URLS["Amazon"]):
-                URLS["Amazon"].append({"url": search_url_amz, "threshold": thresh})
+                URLS["Amazon"].append({"url": search_url_amz, "threshold": thresh, "is_depo": False})
                 
             search_url_depo = f"https://www.amazon.com.tr/s?k={kw}&rh=n%3A44219324031"
             if not any(item["url"] == search_url_depo for item in URLS["Amazon"]):
-                URLS["Amazon"].append({"url": search_url_depo, "threshold": thresh})
+                URLS["Amazon"].append({"url": search_url_depo, "threshold": thresh, "is_depo": True})
 
         # Ayni anda 3 sayfa taramasi icin semaphore
         semaphore = asyncio.Semaphore(3)
@@ -441,8 +458,10 @@ async def main():
         for site, items in URLS.items():
             for item in items:
                 base_url = item["url"]
+                is_depo_flag = item.get("is_depo", False)
                 threshold = global_threshold if global_threshold else item["threshold"]
-                for page_num in range(1, 16):
+                # Tarama sayfasini sistemi yormamak icin ilk 5 sayfa olarak revize ettik
+                for page_num in range(1, 6):
                     if page_num == 1:
                         page_url = base_url
                     else:
@@ -450,7 +469,7 @@ async def main():
                         if site == "Amazon":
                             page_url = f"{base_url}{sep}page={page_num}"
                             
-                    task = asyncio.create_task(crawl_site(context, page_url, site, threshold, semaphore))
+                    task = asyncio.create_task(crawl_site(context, page_url, site, threshold, semaphore, is_depo=is_depo_flag))
                     tasks.append(task)
         
         if tasks:
