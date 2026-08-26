@@ -347,7 +347,12 @@ async def crawl_site(context, url, site, threshold, semaphore, is_depo=False):
                             f = await price_fraction.inner_text() if price_fraction else "00"
                             price = parse_price(f"{w}{f}")
                         else:
-                            price = None
+                            sec_price = await c.query_selector('[data-cy="secondary-offer-recipe"] .a-color-base')
+                            if sec_price:
+                                pt = await sec_price.inner_text()
+                                price = parse_price(pt)
+                            else:
+                                price = None
                             
                         products.append((href.split('/dp/')[1].split('/')[0] if '/dp/' in href else href, title, href, price))
                     except: continue
