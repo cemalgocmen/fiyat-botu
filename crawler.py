@@ -166,6 +166,20 @@ async def check_telegram_messages():
                         await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": help_text, "parse_mode": "Markdown"}))
                         continue
                     
+                    if text.strip().startswith("/depooran"):
+                        parts = text.strip().split()
+                        if len(parts) > 1:
+                            oran_str = parts[1].replace('%', '')
+                            if oran_str.isdigit() or oran_str.replace('.','',1).isdigit():
+                                yeni_oran = float(oran_str)
+                                await conn.execute("INSERT OR REPLACE INTO bot_state (key, value) VALUES ('depo_threshold', ?)", (str(yeni_oran),))
+                                msg = f"✅ Depo içi fiyat düşüşleri için indirim oranı %{yeni_oran} olarak güncellendi! (Not: Yeni eklenen depo ürünleri anında bildirilmeye devam edecektir)."
+                                await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg}))
+                                continue
+                        
+                        await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "❌ Hatalı kullanım. Örnek: /depooran 5"}))
+                        continue
+                    
                     if text.strip().startswith("/oran"):
                         parts = text.strip().split()
                         if len(parts) > 1:
@@ -264,6 +278,10 @@ async def process_product(product_id, title, url, site, current_price, threshold
         cd_row = await cursor.fetchone()
         cooldown_days = int(cd_row[0]) if cd_row else 3
         
+        cursor = await conn.execute("SELECT value FROM bot_state WHERE key='depo_threshold'")
+        dt_row = await cursor.fetchone()
+        depo_threshold = float(dt_row[0]) if dt_row else 0.0
+        
         cursor = await conn.execute("SELECT current_price, last_alert_date, lowest_price FROM products WHERE id=?", (product_id,))
         result = await cursor.fetchone()
         now = datetime.now()
@@ -279,7 +297,7 @@ async def process_product(product_id, title, url, site, current_price, threshold
                 
                 effective_threshold = threshold
                 if site == "Amazon_Depo":
-                    effective_threshold = 0.0 # Depo ürünlerinde herhangi bir fiyat düşüşü bildirilir
+                    effective_threshold = depo_threshold # Kullanıcının belirlediği depo düşüş oranı
                     
                 if drop_percentage >= effective_threshold:
                     days_since_alert = cooldown_days + 1
