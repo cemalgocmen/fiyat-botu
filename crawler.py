@@ -394,6 +394,8 @@ async def scroll_down(page):
         await page.mouse.wheel(0, 1000)
         await asyncio.sleep(1)
 
+import bank_crawler
+
 async def crawl_site(context, url, site, threshold, semaphore, is_depo=False):
     async with semaphore:
         print(f"\n{site} taranıyor: {url}")
@@ -560,6 +562,14 @@ async def main():
         
         print("\nTur tamamlandı, tarayıcı kapatılıyor.")
         await browser.close()
+
+        try:
+            print("Starting Bank Crawler...")
+            await bank_crawler.main()
+            print("Bank Crawler finished.")
+        except Exception as e:
+            print(f"Bank Crawler failed: {e}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
