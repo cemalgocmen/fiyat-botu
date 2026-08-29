@@ -234,10 +234,10 @@ async def check_telegram_messages():
                         if len(parts) > 1 and parts[1].isdigit():
                             yeni_sure = int(parts[1])
                             await conn.execute("INSERT OR REPLACE INTO bot_state (key, value) VALUES ('scan_interval', ?)", (str(yeni_sure),))
-                            msg = f"⏱️ Tarama sıklığı {yeni_sure} dakika olarak güncellendi! Bot artık {yeni_sure} dakikada bir Amazon'a bağlanacak."
+                            msg = f"⏱️ Tarama sıklığı {yeni_sure} saat olarak güncellendi! Bot artık {yeni_sure} saatte bir Amazon'a bağlanacak."
                             await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg}))
                             continue
-                        await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "❌ Hatalı kullanım. Örnek: /sure 120"}))
+                        await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "❌ Hatalı kullanım. Örnek: /sure 2"}))
                         continue
                     
                     if text.strip().startswith("/sil"):
@@ -492,6 +492,15 @@ async def cleanup_database():
 
 async def main():
     await init_db()
+
+    async with aiosqlite.connect(DB_FILE) as conn:
+        cursor = await conn.execute("SELECT value FROM bot_state WHERE key='scan_interval'")
+        row = await cursor.fetchone()
+        if row and int(row[0]) > 24:
+            new_val = max(1, int(row[0]) // 60)
+            await conn.execute("UPDATE bot_state SET value=? WHERE key='scan_interval'", (str(new_val),))
+            await conn.commit()
+
     await cleanup_database()
     await cleanup_old_messages()
     
@@ -500,15 +509,15 @@ async def main():
     async with aiosqlite.connect(DB_FILE) as conn:
         cursor = await conn.execute("SELECT value FROM bot_state WHERE key='scan_interval'")
         row = await cursor.fetchone()
-        scan_interval = int(row[0]) if row else 120 
+        scan_interval = int(row[0]) if row else 2 
         
         cursor = await conn.execute("SELECT value FROM bot_state WHERE key='last_full_scan'")
         row = await cursor.fetchone()
         last_full_scan = float(row[0]) if row else 0.0
         
         current_time = datetime.now().timestamp()
-        if current_time - last_full_scan < (scan_interval * 60):
-            print(f"Tarama sıklığı ({scan_interval} dk) henüz dolmadı. Sadece mesajlar okundu. Çıkılıyor.")
+        if current_time - last_full_scan < (scan_interval * 3600):
+            print(f"Tarama sıklığı ({scan_interval} saat) henüz dolmadı. Sadece mesajlar okundu. Çıkılıyor.")
             return
             
         await conn.execute("INSERT OR REPLACE INTO bot_state (key, value) VALUES ('last_full_scan', ?)", (str(current_time),))
