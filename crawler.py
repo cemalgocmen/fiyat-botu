@@ -154,6 +154,17 @@ async def check_telegram_messages():
 
                     
 
+
+                    if text.strip().startswith("/bankasure"):
+                        parts = text.strip().split()
+                        if len(parts) > 1 and parts[1].isdigit():
+                            yeni_sure = int(parts[1])
+                            await conn.execute("INSERT OR REPLACE INTO bot_state (key, value) VALUES ('bank_scan_interval', ?)", (str(yeni_sure),))
+                            msg = f"⏱️ Banka tarama sıklığı {yeni_sure} saat olarak güncellendi!"
+                            await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg}))
+                            continue
+                        await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "❌ Hatalı kullanım. Örnek: /bankasure 12"}))
+                        continue
                     if text.strip() == "/yasaklar":
                         cursor = await conn.execute("SELECT keyword FROM excluded_keywords")
                         kws = await cursor.fetchall()
@@ -173,6 +184,8 @@ async def check_telegram_messages():
                             "🧹 *Spam Önlemleri*\n"
                             "• `/cooldown <gün>`: Tekrarlayan indirimler için bekleme süresi (Örn: `/cooldown 3`)\n"
                             "• `/sil <saat>`: Atılan indirim mesajları kaç saat sonra silinsin (Örn: `/sil 24` veya `/sil kapat`)\n\n"
+                            "🏦 *Banka Kampanyaları*\n"
+                            "• `/bankasure <saat>`: Banka kampanya tarama sıklığını ayarlar (Örn: `/bankasure 12`)\n\n"
                             "🚫 *Kara Liste (Hariç Tutulanlar)*\n"
                             "• `!<kelime>`: İstenmeyen kelimeyi yasaklar (Örn: `!bardak`)\n"
                             "• `-!<kelime>`: Yasaklı kelimeyi siler (Örn: `-!bardak`)\n"
