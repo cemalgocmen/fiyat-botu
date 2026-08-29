@@ -22,29 +22,33 @@ DB_FILE = "products.db"
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
-BANKS = [
-    {"name": "Axess", "url": "https://www.axess.com.tr/axess/kampanyalar"},
-    {"name": "Paraf", "url": "https://www.paraf.com.tr/tr/kampanyalar.html"},
-    {"name": "CardFinans", "url": "https://www.cardfinans.com/kampanyalar"},
-    {"name": "Enpara", "url": "https://www.qnb.com.tr/enpara/kampanyalar"},
-    {"name": "Kuveyt Türk", "url": "https://www.kuveytturk.com.tr/kampanyalar"}
-]
+# We only care about these banks
+TARGET_KEYWORDS = ["paraf", "axess", "qnb", "finans", "enpara", "kuveyt", "saglam"]
 
 async def init_db():
     async with aiosqlite.connect(DB_FILE) as conn:
+        # We will use href as the unique identifier for campaigns now
         await conn.execute('''
-            CREATE TABLE IF NOT EXISTS bank_campaigns (
-                bank_name TEXT PRIMARY KEY,
-                has_amazon INTEGER,
-                last_checked TIMESTAMP
+            CREATE TABLE IF NOT EXISTS bank_campaigns_v2 (
+                href TEXT PRIMARY KEY,
+                title TEXT,
+                bank_name TEXT,
+                found_date TIMESTAMP
+            )
+        ''')
+        # Just in case bot_state is not created yet
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS bot_state (
+                key TEXT PRIMARY KEY,
+                value TEXT
             )
         ''')
         await conn.commit()
 
-async def send_telegram_alert(bank_name, url):
+async def send_telegram_alert(bank_name, title, url):
     if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
         import requests
-        msg = f"💳 YENİ BANKA KAMPANYASI 💳\n\n{bank_name} kampanya sayfasında 'Amazon' kelimesi tespit edildi! Yeni bir fırsat olabilir.\n\nLink: {url}"
+        msg = f"💳 YENİ KAMPANYA ({bank_name.upper()}) 💳\n\n📌 {title}\n\nLink: {url}"
         api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         try:
             loop = asyncio.get_event_loop()
@@ -52,20 +56,55 @@ async def send_telegram_alert(bank_name, url):
         except Exception as e:
             print(f"Telegram error: {e}")
 
-async def crawl_bank(context, bank):
+async def crawl_aggregator(context):
     page = await context.new_page()
-    found_amazon = False
+    found_campaigns = []
     try:
-        await page.goto(bank['url'], timeout=60000, wait_until="domcontentloaded")
-        await asyncio.sleep(3)
-        text = await page.evaluate("document.body.innerText")
-        if 'amazon' in text.lower():
-            found_amazon = True
+        await page.goto("https://www.getkampania.com/markalar/amazon-kampanyalari", timeout=30000, wait_until="networkidle")
+        
+        campaigns = await page.evaluate('''() => {
+            let arr = [];
+            for(let a of document.querySelectorAll('a')) {
+                if(a.innerText.trim().length > 10 && a.innerText.toUpperCase().includes('AMAZON')) {
+                    arr.push({text: a.innerText.trim(), href: a.href});
+                }
+            }
+            return arr;
+        }''')
+        
+        for c in campaigns:
+            text = c['text']
+            href = c['href']
+            
+            # Split text to get a clean title (often second line)
+            lines = [line.strip() for line in text.split('\\n') if line.strip()]
+            title = lines[1] if len(lines) > 1 else lines[0]
+            
+            # Check if it matches our target banks
+            matched_bank = None
+            search_str = (href + " " + text).lower()
+            
+            for keyword in TARGET_KEYWORDS:
+                if keyword in search_str:
+                    matched_bank = keyword
+                    break
+                    
+            if matched_bank:
+                if matched_bank == "finans": matched_bank = "qnb"
+                if matched_bank == "saglam": matched_bank = "kuveyt"
+                
+                found_campaigns.append({
+                    "href": href,
+                    "title": title,
+                    "bank": matched_bank
+                })
+                
     except Exception as e:
-        print(f"Error checking {bank['name']}: {e}")
+        print(f"Error checking aggregator: {e}")
     finally:
         await page.close()
-    return bank['name'], bank['url'], found_amazon
+        
+    return found_campaigns
 
 async def main():
     await init_db()
@@ -87,30 +126,27 @@ async def main():
         await conn.execute("INSERT OR REPLACE INTO bot_state (key, value) VALUES ('last_bank_scan', ?)", (str(current_time),))
         await conn.commit()
 
-    print("Starting bank campaign scan...")
+    print("Starting bank campaign scan (Aggregator)...")
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
         
-        tasks = []
-        for bank in BANKS:
-            tasks.append(asyncio.create_task(crawl_bank(context, bank)))
-            
-        results = await asyncio.gather(*tasks)
+        campaigns = await crawl_aggregator(context)
         
         async with aiosqlite.connect(DB_FILE) as conn:
-            for name, url, found_amazon in results:
-                cursor = await conn.execute("SELECT has_amazon FROM bank_campaigns WHERE bank_name=?", (name,))
+            for c in campaigns:
+                href = c['href']
+                title = c['title']
+                bank = c['bank']
+                
+                cursor = await conn.execute("SELECT 1 FROM bank_campaigns_v2 WHERE href=?", (href,))
                 row = await cursor.fetchone()
                 
-                previously_had_amazon = bool(row[0]) if row else False
-                
-                if found_amazon and not previously_had_amazon:
-                    print(f"NEW AMAZON CAMPAIGN: {name}")
-                    await send_telegram_alert(name, url)
-                
-                await conn.execute("INSERT OR REPLACE INTO bank_campaigns (bank_name, has_amazon, last_checked) VALUES (?, ?, ?)", 
-                                  (name, int(found_amazon), current_time))
+                if not row:
+                    print(f"NEW AMAZON CAMPAIGN FOUND: [{bank}] {title}")
+                    await send_telegram_alert(bank, title, href)
+                    await conn.execute("INSERT INTO bank_campaigns_v2 (href, title, bank_name, found_date) VALUES (?, ?, ?, ?)", 
+                                      (href, title, bank, current_time))
             await conn.commit()
             
         await browser.close()
