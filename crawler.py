@@ -172,28 +172,33 @@ async def check_telegram_messages():
                         await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg}))
                         continue
                     if text.strip() == "/yardim":
-                        help_text = (
-                            "🤖 *Amazon Fiyat Botu - Kullanım Kılavuzu*\n\n"
-                            "📌 *Ürün Arama Komutları*\n"
-                            "• `#kelime`: Aranacak kelimeyi ekler (Örn: `#telefon`)\n"
-                            "• `-#kelime`: Kelimeyi siler (Örn: `-#telefon`)\n"
-                            "• `/liste`: Takip edilen kelimeleri gösterir.\n\n"
-                            "⚙️ *İndirim ve Tarama Ayarları*\n"
-                            "• `/oran <yüzde>`: İndirim eşiğini ayarlar (Örn: `/oran 15`)\n"
-                            "• `/sure <dakika>`: Tarama sıklığını ayarlar (Örn: `/sure 60`)\n\n"
-                            "🧹 *Spam Önlemleri*\n"
-                            "• `/cooldown <gün>`: Tekrarlayan indirimler için bekleme süresi (Örn: `/cooldown 3`)\n"
-                            "• `/sil <saat>`: Atılan indirim mesajları kaç saat sonra silinsin (Örn: `/sil 24` veya `/sil kapat`)\n\n"
-                            "🏦 *Banka Kampanyaları*\n"
-                            "• `/bankasure <saat>`: Banka kampanya tarama sıklığını ayarlar (Örn: `/bankasure 12`)\n\n"
-                            "🚫 *Kara Liste (Hariç Tutulanlar)*\n"
-                            "• `!<kelime>`: İstenmeyen kelimeyi yasaklar (Örn: `!bardak`)\n"
-                            "• `-!<kelime>`: Yasaklı kelimeyi siler (Örn: `-!bardak`)\n"
-                            "• `/yasaklar`: Yasaklı kelimeleri gösterir.\n\n"
-                            "🚀 *Test*\n"
-                            "• `/test`: Sistemin gruba bağlantısını test eder."
+                        msg = (
+                            "🤖 *GELİŞMİŞ FİYAT & KAMPANYA BOTU - KULLANIM KILAVUZU*\n\n"
+                            
+                            "🛒 *1. ÜRÜN ARAMA VE TAKİP*\n"
+                            "• `#kelime`: Sisteme yeni bir arama kelimesi veya marka ekler. Boşluk yerine alt çizgi kullanın. (Örn: `#stanley` veya `#kahve_makinesi`)\n"
+                            "• `-#kelime`: Takipten çıkarmak istediğiniz kelimeyi siler. (Örn: `-#stanley`)\n"
+                            "• `/liste`: Şu an sistemin Amazon'da aradığı tüm kelimeleri listeler.\n\n"
+                            
+                            "🚫 *2. KARA LİSTE (İSTENMEYEN ÜRÜNLER)*\n"
+                            "• `!kelime`: Başlığında bu kelime geçen hiçbir ürün size gönderilmez, engellenir. (Örn: `!pipetli` veya `!avent`)\n"
+                            "• `-!kelime`: Daha önce yasakladığınız bir kelimenin yasağını kaldırır. (Örn: `-!pipetli`)\n"
+                            "• `/yasaklar`: Güncel kara listenizi gösterir.\n\n"
+
+                            "⚙️ *3. İNDİRİM VE ORAN AYARLARI*\n"
+                            "• `/oran <yüzde>`: Normal Amazon ürünleri için minimum indirim bildirim oranını ayarlar. (Örn: `/oran 10` derseniz fiyatı %10 düşmeyen ürünleri atmaz).\n"
+                            "• `/depooran <yüzde>`: *Amazon Depo* ürünleri için indirim bildirim oranını ayarlar. (Örn: `/depooran 5`). Not: Depoya düşen 'yepyeni' bir ürün oran gözetmeksizin anında atılır.\n"
+                            "• `/cooldown <gün>`: Aynı ürünün fiyatı tekrar düşerse, arka arkaya mesaj atmaması için kaç gün beklemesi gerektiğini belirler. (Örn: `/cooldown 3`)\n\n"
+                            
+                            "⏱️ *4. TARAMA SIKLIĞI VE TEMİZLİK*\n"
+                            "• `/sure <saat>`: Amazon fiyat taramasının kaç saatte bir yapılacağını belirler. (Örn: `/sure 2` -> 2 saatte bir)\n"
+                            "• `/bankasure <saat>`: Banka kampanyalarının (Axess, Paraf vb.) kaç saatte bir taranacağını belirler. (Örn: `/bankasure 12`)\n"
+                            "• `/sil <saat>`: Gruptaki kalabalığı önlemek için, botun attığı mesajların kaç saat sonra otomatik silineceğini ayarlar. (Örn: `/sil 24` veya `/sil kapat`)\n\n"
+
+                            "🛠️ *5. TEST VE KONTROL*\n"
+                            "• `/test`: Sistemin aktif olup olmadığını ve gruba mesaj atıp atamadığını test eder."
                         )
-                        await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": help_text, "parse_mode": "Markdown"}))
+                        await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}))
                         continue
                     
                     if text.strip().startswith("/depooran"):
@@ -394,8 +399,6 @@ async def scroll_down(page):
         await page.mouse.wheel(0, 1000)
         await asyncio.sleep(1)
 
-import bank_crawler
-
 async def crawl_site(context, url, site, threshold, semaphore, is_depo=False):
     async with semaphore:
         print(f"\n{site} taranıyor: {url}")
@@ -562,14 +565,6 @@ async def main():
         
         print("\nTur tamamlandı, tarayıcı kapatılıyor.")
         await browser.close()
-
-        try:
-            print("Starting Bank Crawler...")
-            await bank_crawler.main()
-            print("Bank Crawler finished.")
-        except Exception as e:
-            print(f"Bank Crawler failed: {e}")
-
 
 if __name__ == "__main__":
     asyncio.run(main())
