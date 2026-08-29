@@ -253,6 +253,14 @@ async def check_telegram_messages():
         except Exception as e:
             print("Telegram getUpdates hatasi:", e)
 
+
+def extract_asin(url):
+    import urllib.parse
+    d = urllib.parse.unquote(url)
+    if '/dp/' in d:
+        return d.split('/dp/')[1].split('/')[0].split('?')[0]
+    return None
+
 def parse_price(price_str):
     if not price_str: return None
     clean_str = re.sub(r'[^\d.,]', '', price_str)
@@ -372,7 +380,9 @@ async def crawl_site(context, url, site, threshold, semaphore, is_depo=False):
                             else:
                                 price = None
                             
-                        products.append((href.split('/dp/')[1].split('/')[0] if '/dp/' in href else href, title, href, price))
+                        asin = extract_asin(href)
+                        if asin:
+                            products.append((asin, title, href, price))
                     except: continue
 
             print(f"{site} -> Bu sayfada {len(products)} ürün bulundu ve işleniyor...")
@@ -419,6 +429,7 @@ async def cleanup_database():
     try:
         async with aiosqlite.connect(DB_FILE) as conn:
             await conn.execute("DELETE FROM products WHERE last_checked < datetime('now', '-7 days')")
+            await conn.execute("DELETE FROM products WHERE id LIKE '%?%'")
             await conn.commit()
             await conn.execute("VACUUM")
             await conn.commit()
