@@ -153,29 +153,13 @@ async def check_telegram_messages():
                         continue
 
                     
-                    if text.strip().startswith("/haric_liste"):
+
+                    if text.strip() == "/yasaklar":
                         cursor = await conn.execute("SELECT keyword FROM excluded_keywords")
                         kws = await cursor.fetchall()
                         msg = "🚫 **Yasaklı Kelimeleriniz:**\n" + "\n".join([f"• {k[0]}" for k in kws]) if kws else "Yasaklı kelime listeniz boş."
                         await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg}))
                         continue
-
-                    if text.strip().startswith("/haric_sil "):
-                        kw = text.replace("/haric_sil", "").strip().lower()
-                        if kw:
-                            await conn.execute("DELETE FROM excluded_keywords WHERE keyword=?", (kw,))
-                            msg = f"✅ '{kw}' kelimesi yasaklı listeden çıkarıldı."
-                            await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg}))
-                        continue
-
-                    if text.strip().startswith("/haric "):
-                        kw = text.replace("/haric", "").strip().lower()
-                        if kw:
-                            await conn.execute("INSERT OR IGNORE INTO excluded_keywords (keyword) VALUES (?)", (kw,))
-                            msg = f"🚫 '{kw}' kelimesi yasaklandı! İçinde bu kelime geçen ürünler artık size gönderilmeyecek."
-                            await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg}))
-                        continue
-
                     if text.strip() == "/yardim":
                         help_text = (
                             "🤖 *Amazon Fiyat Botu - Kullanım Kılavuzu*\n\n"
@@ -190,9 +174,9 @@ async def check_telegram_messages():
                             "• `/cooldown <gün>`: Tekrarlayan indirimler için bekleme süresi (Örn: `/cooldown 3`)\n"
                             "• `/sil <saat>`: Atılan indirim mesajları kaç saat sonra silinsin (Örn: `/sil 24` veya `/sil kapat`)\n\n"
                             "🚫 *Kara Liste (Hariç Tutulanlar)*\n"
-                            "• `/haric <kelime>`: İstenmeyen kelimeyi yasaklar (Örn: `/haric bardak`)\n"
-                            "• `/haric_sil <kelime>`: Yasaklı kelimeyi siler (Örn: `/haric_sil bardak`)\n"
-                            "• `/haric_liste`: Yasaklı kelimeleri gösterir.\n\n"
+                            "• `!<kelime>`: İstenmeyen kelimeyi yasaklar (Örn: `!bardak`)\n"
+                            "• `-!<kelime>`: Yasaklı kelimeyi siler (Örn: `-!bardak`)\n"
+                            "• `/yasaklar`: Yasaklı kelimeleri gösterir.\n\n"
                             "🚀 *Test*\n"
                             "• `/test`: Sistemin gruba bağlantısını test eder."
                         )
@@ -265,6 +249,8 @@ async def check_telegram_messages():
                         await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "❌ Hatalı kullanım. Örnek: /cooldown 3 veya /cooldown 5"}))
                         continue
                     
+                    banned = []
+                    unbanned = []
                     for w in words:
                         if w.startswith("-#") and len(w) > 2:
                             kw = w[2:].lower().replace("_", "+")
@@ -274,11 +260,21 @@ async def check_telegram_messages():
                             kw = w[1:].lower().replace("_", "+")
                             await conn.execute("INSERT OR IGNORE INTO custom_keywords (keyword) VALUES (?)", (kw,))
                             added.append(kw)
+                        elif w.startswith("-!") and len(w) > 2:
+                            kw = w[2:].lower()
+                            await conn.execute("DELETE FROM excluded_keywords WHERE keyword=?", (kw,))
+                            unbanned.append(kw)
+                        elif w.startswith("!") and len(w) > 1:
+                            kw = w[1:].lower()
+                            await conn.execute("INSERT OR IGNORE INTO excluded_keywords (keyword) VALUES (?)", (kw,))
+                            banned.append(kw)
                     
-                    if added or removed:
+                    if added or removed or banned or unbanned:
                         msg = ""
-                        if added: msg += f"✅ Eklendi: {', '.join(added)}\n"
-                        if removed: msg += f"🗑️ Silindi: {', '.join(removed)}"
+                        if added: msg += f"✅ Arananlara Eklendi: {', '.join(added)}\n"
+                        if removed: msg += f"🗑️ Arananlardan Silindi: {', '.join(removed)}\n"
+                        if banned: msg += f"🚫 Yasaklılara Eklendi: {', '.join(banned)}\n"
+                        if unbanned: msg += f"✅ Yasaklılardan Silindi: {', '.join(unbanned)}\n"
                         await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg.strip()}))
             
             await conn.execute("INSERT OR REPLACE INTO bot_state (key, value) VALUES ('last_update_id', ?)", (str(max_update_id),))
