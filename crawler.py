@@ -156,9 +156,7 @@ async def check_telegram_messages():
                     if text.strip().startswith("/haric_liste"):
                         cursor = await conn.execute("SELECT keyword FROM excluded_keywords")
                         kws = await cursor.fetchall()
-                        msg = "🚫 **Yasaklı Kelimeleriniz:**
-" + "
-".join([f"• {k[0]}" for k in kws]) if kws else "Yasaklı kelime listeniz boş."
+                        msg = "🚫 **Yasaklı Kelimeleriniz:**\n" + "\n".join([f"• {k[0]}" for k in kws]) if kws else "Yasaklı kelime listeniz boş."
                         await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg}))
                         continue
 
@@ -191,12 +189,11 @@ async def check_telegram_messages():
                             "🧹 *Spam Önlemleri*\n"
                             "• `/cooldown <gün>`: Tekrarlayan indirimler için bekleme süresi (Örn: `/cooldown 3`)\n"
                             "• `/sil <saat>`: Atılan indirim mesajları kaç saat sonra silinsin (Örn: `/sil 24` veya `/sil kapat`)\n\n"
-                            "🚫 *Kara Liste (Hariç Tutulanlar)*
-• `/haric <kelime>`: İstenmeyen kelimeyi yasaklar (Örn: `/haric bardak`)
-• `/haric_sil <kelime>`: Yasaklı kelimeyi siler (Örn: `/haric_sil bardak`)
-• `/haric_liste`: Yasaklı kelimeleri gösterir.
-
-🚀 *Test*\n"
+                            "🚫 *Kara Liste (Hariç Tutulanlar)*\n"
+                            "• `/haric <kelime>`: İstenmeyen kelimeyi yasaklar (Örn: `/haric bardak`)\n"
+                            "• `/haric_sil <kelime>`: Yasaklı kelimeyi siler (Örn: `/haric_sil bardak`)\n"
+                            "• `/haric_liste`: Yasaklı kelimeleri gösterir.\n\n"
+                            "🚀 *Test*\n"
                             "• `/test`: Sistemin gruba bağlantısını test eder."
                         )
                         await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": help_text, "parse_mode": "Markdown"}))
