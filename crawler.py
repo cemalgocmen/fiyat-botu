@@ -57,6 +57,11 @@ async def init_db():
             )
         ''')
         await conn.execute('''
+            CREATE TABLE IF NOT EXISTS excluded_keywords (
+                keyword TEXT PRIMARY KEY
+            )
+        ''')
+        await conn.execute('''
             CREATE TABLE IF NOT EXISTS sent_messages (
                 message_id INTEGER PRIMARY KEY,
                 chat_id TEXT,
@@ -147,6 +152,32 @@ async def check_telegram_messages():
                             await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "❌ Hata: Grup ID'si bulunamadı!"}))
                         continue
 
+                    
+                    if text.strip().startswith("/haric_liste"):
+                        cursor = await conn.execute("SELECT keyword FROM excluded_keywords")
+                        kws = await cursor.fetchall()
+                        msg = "🚫 **Yasaklı Kelimeleriniz:**
+" + "
+".join([f"• {k[0]}" for k in kws]) if kws else "Yasaklı kelime listeniz boş."
+                        await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg}))
+                        continue
+
+                    if text.strip().startswith("/haric_sil "):
+                        kw = text.replace("/haric_sil", "").strip().lower()
+                        if kw:
+                            await conn.execute("DELETE FROM excluded_keywords WHERE keyword=?", (kw,))
+                            msg = f"✅ '{kw}' kelimesi yasaklı listeden çıkarıldı."
+                            await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg}))
+                        continue
+
+                    if text.strip().startswith("/haric "):
+                        kw = text.replace("/haric", "").strip().lower()
+                        if kw:
+                            await conn.execute("INSERT OR IGNORE INTO excluded_keywords (keyword) VALUES (?)", (kw,))
+                            msg = f"🚫 '{kw}' kelimesi yasaklandı! İçinde bu kelime geçen ürünler artık size gönderilmeyecek."
+                            await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": msg}))
+                        continue
+
                     if text.strip() == "/yardim":
                         help_text = (
                             "🤖 *Amazon Fiyat Botu - Kullanım Kılavuzu*\n\n"
@@ -160,7 +191,12 @@ async def check_telegram_messages():
                             "🧹 *Spam Önlemleri*\n"
                             "• `/cooldown <gün>`: Tekrarlayan indirimler için bekleme süresi (Örn: `/cooldown 3`)\n"
                             "• `/sil <saat>`: Atılan indirim mesajları kaç saat sonra silinsin (Örn: `/sil 24` veya `/sil kapat`)\n\n"
-                            "🚀 *Test*\n"
+                            "🚫 *Kara Liste (Hariç Tutulanlar)*
+• `/haric <kelime>`: İstenmeyen kelimeyi yasaklar (Örn: `/haric bardak`)
+• `/haric_sil <kelime>`: Yasaklı kelimeyi siler (Örn: `/haric_sil bardak`)
+• `/haric_liste`: Yasaklı kelimeleri gösterir.
+
+🚀 *Test*\n"
                             "• `/test`: Sistemin gruba bağlantısını test eder."
                         )
                         await loop.run_in_executor(None, lambda: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": help_text, "parse_mode": "Markdown"}))
@@ -282,6 +318,13 @@ async def process_product(product_id, title, url, site, current_price, threshold
         return
 
     async with aiosqlite.connect(DB_FILE) as conn:
+        cursor = await conn.execute("SELECT keyword FROM excluded_keywords")
+        excluded_rows = await cursor.fetchall()
+        title_lower = title.lower()
+        for row in excluded_rows:
+            if row[0] in title_lower:
+                return # Ürün başlığında yasaklı kelime var, işlemi durdur
+
         cursor = await conn.execute("SELECT value FROM bot_state WHERE key='cooldown_days'")
         cd_row = await cursor.fetchone()
         cooldown_days = int(cd_row[0]) if cd_row else 3
